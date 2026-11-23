@@ -80,8 +80,20 @@
     img.data.set(out); c.putImageData(img, 0, 0);
     return { cv, ox, oy };
   }
+  // Painted sprites (assets/sprites/*.png, cut from AI-painted sheets) replace the pixel figures when loaded.
+  const SPR = {};
+  ['rowan_0', 'rowan_1', 'rowan_2', 'rowan_3', 'bram', 'nell', 'hester', 'marla'].forEach(n => { if (typeof Image === 'undefined') return; const im = new Image(); im.src = 'assets/sprites/' + n + '.png'; SPR[n] = im; });
+  const sprReady = n => SPR[n] && SPR[n].complete && SPR[n].naturalWidth > 0;
+  function drawSprite(c, im, x, y, H, mirror) {
+    const W = im.naturalWidth * H / im.naturalHeight, X = Math.round(x), Y = Math.round(y);
+    ell(c, 'rgba(10,6,4,.32)', x, y, W * 0.38, H * 0.05);
+    c.save(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    if (mirror) { c.translate(X, 0); c.scale(-1, 1); c.drawImage(im, -W / 2, Y - H, W, H); } else c.drawImage(im, X - W / 2, Y - H, W, H);
+    c.restore();
+  }
   function figure(c, x, y, o, frame = 0, dir = 1) {
     const H = Math.max(14, Math.round((o.h || 34) * 1.18)), f = frame % 4;
+    if (o.sprite && sprReady(o.sprite)) return drawSprite(c, SPR[o.sprite], x, y, H * 1.08, dir < 0);
     const key = JSON.stringify(o, (k, v) => typeof v === 'function' ? v.toString() : v) + '|' + f + '|' + H;
     let sp = spriteCache.get(key);
     if (!sp) { sp = buildSprite(o, f, H); spriteCache.set(key, sp); if (spriteCache.size > 600) spriteCache.delete(spriteCache.keys().next().value); }
@@ -93,7 +105,11 @@
   }
 
   const HERO = { skin: '#e8b48a', hair: '#6b3f1d', top: '#2f6b3a', sleeve: '#efe6d0', legs: '#4a3a2a', belt: '#e2b23a', cape: '#8c1d26' };
-  const player = (c, x, y, frame, dir, sc = 1) => figure(c, x, y, Object.assign({}, HERO, { h: 36 * sc }), frame, dir);
+  const player = (c, x, y, frame, dir, sc = 1) => {
+    const n = frame === 0 ? 'rowan_0' : 'rowan_' + [1, 2, 3, 2][frame % 4];
+    if (sprReady(n)) return drawSprite(c, SPR[n], x, y, 36 * sc * 1.18 * 1.1, dir < 0);
+    figure(c, x, y, Object.assign({}, HERO, { h: 36 * sc }), frame, dir);
+  };
 
   // ---------- shared scenery ----------
   function sky(c, cols, h) { bands(c, 0, 0, 320, h, cols); }
@@ -357,7 +373,7 @@
       c.strokeStyle = '#7a5230'; c.lineWidth = 2; c.beginPath(); c.arc(110, 132, 14, 0, Math.PI * 2); c.stroke();
       for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.beginPath(); c.moveTo(110, 132); c.lineTo(110 + Math.cos(a) * 18, 132 + Math.sin(a) * 18); c.stroke(); }
     },
-    actors: () => [{ y: 120, d: c => { if (window.Art.hasPainting && window.Art.hasPainting('shop')) { c.save(); c.beginPath(); c.rect(0, 0, 320, 117); c.clip(); figure(c, 250, 132, { h: 32, skin: '#e3b08c', hair: '#d8d8d8', beard: '#e4e4e4', top: '#3d5a8a', legs: '#333', hat: r => { r('#8c1d26', -3, 28, 6, 2.5); } }, 0, -1); c.restore(); } else { figure(c, 214, 128, { h: 32, skin: '#e3b08c', hair: '#d8d8d8', beard: '#e4e4e4', top: '#3d5a8a', legs: '#333', hat: r => { r('#8c1d26', -3, 28, 6, 2.5); } }, 0, -1); R(c, '#5a3a22', 140, 120, 166, 38); R(c, '#7a5230', 136, 116, 174, 6); } } }]
+    actors: () => [{ y: 120, d: c => { if (window.Art.hasPainting && window.Art.hasPainting('shop')) { c.save(); c.beginPath(); c.rect(0, 0, 320, 117); c.clip(); figure(c, 250, 142, { sprite: 'bram', h: 38, skin: '#e3b08c', hair: '#d8d8d8', beard: '#e4e4e4', top: '#3d5a8a', legs: '#333', hat: r => { r('#8c1d26', -3, 28, 6, 2.5); } }, 0, -1); c.restore(); } else { figure(c, 214, 128, { h: 32, skin: '#e3b08c', hair: '#d8d8d8', beard: '#e4e4e4', top: '#3d5a8a', legs: '#333', hat: r => { r('#8c1d26', -3, 28, 6, 2.5); } }, 0, -1); R(c, '#5a3a22', 140, 120, 166, 38); R(c, '#7a5230', 136, 116, 174, 6); } } }]
   };
 
   rooms.docks = {
@@ -394,7 +410,7 @@
       c.strokeStyle = 'rgba(60,40,20,.7)'; c.beginPath(); c.moveTo(256, 74 + bob); c.lineTo(212, 150 + bob); c.moveTo(256, 74 + bob); c.lineTo(308, 150 + bob); c.stroke();
       c.strokeStyle = '#ffffff'; for (let i = 0; i < 3; i++) { const gx = (t * 9 + i * 110) % 360 - 20, gy = 30 + Math.sin(t + i) * 5 + i * 9, f = Math.sin(t * 6 + i) * 2; c.beginPath(); c.moveTo(gx - 4, gy - f); c.lineTo(gx, gy + 1); c.lineTo(gx + 4, gy - f); c.stroke(); }
     },
-    actors: () => [{ y: 150, d: c => figure(c, 200, 150, { skin: '#c9906a', hair: '#a8a8a8', longHair: true, top: '#c8a43a', legs: '#3a3a44', hat: r => { r('#c8a43a', -4, 28, 8, 1.5); r('#c8a43a', -2.5, 29, 5, 2); } }, 0, -1) }],
+    actors: () => [{ y: 150, d: c => figure(c, 200, 150, { sprite: 'nell', skin: '#c9906a', hair: '#a8a8a8', longHair: true, top: '#c8a43a', legs: '#3a3a44', hat: r => { r('#c8a43a', -4, 28, 8, 1.5); r('#c8a43a', -2.5, 29, 5, 2); } }, 0, -1) }],
     post(c, s, t) { litPoly(c, [300, 200, 300, 160, 310, 160, 310, 200], '#3a2818', '#22160a', 'wood'); c.strokeStyle = '#c8b080'; c.lineWidth = 2; c.beginPath(); c.moveTo(310, 172); c.quadraticCurveTo(316, 190, 320, 186); c.stroke(); c.lineWidth = 1; }
   };
 
@@ -673,7 +689,7 @@
       c.fillStyle = 'rgba(255,240,220,.08)'; for (let x = 1; x < 320; x += 8) c.fillRect(x, 150, 1, 50);
       R(c, '#110f0d', 0, 130, 18, 70);
     },
-    actors: () => [{ y: 170, d: c => figure(c, 215, 170, { skin: '#d8a080', hair: '#b8b8b8', longHair: true, top: '#2a3a6a', dress: '#2a3a6a', trim: '#c99a22', legs: '#2a3a6a', hat: r => { r('#1a2440', -3.5, 28, 7, 2); r('#1a2440', -2.5, 29.5, 5, 2); } }, 0, -1) }]
+    actors: () => [{ y: 170, d: c => figure(c, 215, 170, { sprite: 'hester', skin: '#d8a080', hair: '#b8b8b8', longHair: true, top: '#2a3a6a', dress: '#2a3a6a', trim: '#c99a22', legs: '#2a3a6a', hat: r => { r('#1a2440', -3.5, 28, 7, 2); r('#1a2440', -2.5, 29.5, 5, 2); } }, 0, -1) }]
   };
 
   rooms.clockharbor = {
@@ -939,7 +955,7 @@
       R(c, '#e8c898', 0, 130, 14, 70);
     },
     actors: () => [
-      { y: 120, d: c => { c.save(); c.beginPath(); c.rect(0, 0, 320, 120); c.clip(); figure(c, 252, 136, { h: 34, skin: '#e3b08c', hair: '#8a3a1a', longHair: true, top: '#7a2a2a', sleeve: '#e8e0cc', legs: '#333' }, 0, -1); c.restore(); } },
+      { y: 120, d: c => { c.save(); c.beginPath(); c.rect(0, 0, 320, 120); c.clip(); figure(c, 252, 146, { sprite: 'marla', h: 40, skin: '#e3b08c', hair: '#8a3a1a', longHair: true, top: '#7a2a2a', sleeve: '#e8e0cc', legs: '#333' }, 0, -1); c.restore(); } },
       { y: 168, d: c => { figure(c, 64, 168, { h: 32, skin: '#f0c8a8', hair: '#c8a040', top: '#3a6a3a', legs: '#5a3a22', hat: r => { r('#8c1d26', -3.5, 27, 7, 2.5); r('#e2b23a', 2, 29, 1, 5); } }, 0, 1); ell(c, '#b8742a', 72, 152, 6, 4.5); R(c, '#8a5a2a', 74, 140, 2, 12); R(c, '#2a1a10', 70, 151, 3, 2); } }
     ]
   };

@@ -92,4 +92,32 @@ for (const [id, room] of Object.entries(G.ROOMS)) {
   }
 }
 for (const [k, i] of Object.entries(G.ISLES)) assert(inBox(G.ROOMS[i.to].walk, i.x, i.y), `isle ${k} arrival outside walk box`);
+// Magic map: works from any outdoor screen, never indoors.
+{
+  const m = G.newState(); m.flags.compass = true; m.inv.push('compass');
+  m.room = 'cliffs'; assert(G.travel(m, 'reef').go, 'map should work on the cliffs');
+  m.room = 'shop'; assert(!G.travel(m, 'reef').go, 'map should not work indoors');
+  m.room = 'tower'; assert(!G.travel(m, 'reef').go, 'map should not work in the tower');
+  m.room = 'square'; assert(G.act(m, 'board', 'item', 'compass').map, 'using the map on anything outdoors opens it');
+}
+
+// Pathfinding: every walk target and arrival is free, and reachable from every arrival point without crossing a block.
+for (const [id, room] of Object.entries(G.ROOMS)) {
+  const targets = room.spots.filter(sp => sp.at).map(sp => sp.at);
+  const starts = [];
+  for (const [rid, r] of Object.entries(G.ROOMS)) for (const sp of r.spots) if (sp.exit && sp.exit.to === id) starts.push([sp.exit.x, sp.exit.y]);
+  for (const [x, y] of targets.concat(starts)) assert(G.freeAt(id, x, y), `${id}: point ${x},${y} is inside a block`);
+  for (const [sx, sy] of starts) for (const [tx, ty] of targets) {
+    const pts = G.path(id, sx, sy, tx, ty), last = pts[pts.length - 1];
+    assert(Math.hypot(last[0] - tx, last[1] - ty) < 1, `${id}: path to ${tx},${ty} ends at ${last}`);
+    let px = sx, py = sy;
+    for (const [qx, qy] of pts) { for (let i = 1; i <= 20; i++) assert(G.freeAt(id, px + (qx - px) * i / 20, py + (qy - py) * i / 20) || i < 2, `${id}: path crosses a block`); px = qx; py = qy; }
+  }
+}
+
+// Every item answers Look/Hand/Talk; hints exist at every stage of the long walkthrough.
+for (const id of Object.keys(G.ITEMS)) { const h = G.newState(); h.inv.push(id); for (const v of ['look', 'hand', 'talk']) { const r = G.invAct(h, id, v); assert(r.say || r.map, `${id}/${v}`); } }
+assert.strictEqual(G.newState().inv.length, 0);
+{ const h = fresh(); const seen = new Set(); seen.add(G.hints(h).q); toTower(h); seen.add(G.hints(h).q); assert(seen.size === 2 && G.hints(h).answer.includes('Feather')); }
+
 console.log('walkthrough ok — long ending', s.score, 'of', G.MAX_SCORE, '| short ending', t.score);

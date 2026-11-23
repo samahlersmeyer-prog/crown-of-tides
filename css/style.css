@@ -40,7 +40,7 @@ body.cine .skip { display: block; }
 .msg-hint { display: block; text-align: right; margin-top: 6px; font-size: 13px; color: #7a5a3a; font-style: italic; }
 @keyframes rise { from { opacity: 0; transform: translate(-50%, -46%); } }
 
-.panel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: rgba(9, 13, 26, .86); text-align: center; overflow: auto; }
+.panel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 10px; padding: 16px; background: rgba(9, 13, 26, .86); text-align: center; overflow: auto; }
 .panel[hidden], .msg[hidden] { display: none; }
 .panel h2 { font-family: 'Cinzel', serif; color: var(--gold); margin: 0; font-size: clamp(20px, 4.4vw, 34px); letter-spacing: .04em; }
 .prose { max-width: 60ch; margin: 0; font-size: clamp(15px, 2.6vw, 20px); line-height: 1.4; white-space: pre-line; }
@@ -74,6 +74,13 @@ body.mouse .mouse-only { display: block; }
 .inv-item.sel { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
 .inv-desc { max-width: 56ch; margin: 0; min-height: 2.8em; font-size: clamp(14px, 2.4vw, 18px); line-height: 1.35; }
 
+.icons.has-map { grid-template-columns: repeat(8, 1fr); }
+.icons button[hidden] { display: none; }
+.inv-verbs { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.inv-verbs button { background: #111a2e; border: 1px solid #2c3c5e; border-radius: 3px; padding: 6px 10px; min-height: 40px; cursor: pointer; font-size: clamp(13px, 2.2vw, 16px); color: #cdbf9f; }
+.inv-verbs button[aria-pressed="true"] { background: #2a2414; border-color: var(--gold); color: var(--gold); }
+.hint-q { font-style: italic; color: var(--gold); }
+.msg { z-index: 10; }
 /* Icon bar: below the screen on touch, a drop-down bar over the top of the screen with a mouse (like the old SCI games) */
 body.mouse .screen-wrap { overflow: hidden; }
 body.mouse .icons { position: absolute; top: 3px; left: 3px; right: 3px; z-index: 5; transform: translateY(-110%); transition: transform .18s cubic-bezier(.16,1,.3,1); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
@@ -91,5 +98,11 @@ body.mouse .icons.show { transform: none; }
   .stage { width: auto; height: calc(100vh - 60px); }
   .icons { grid-template-columns: 1fr; grid-auto-rows: 1fr; height: calc(100vh - 60px); width: 70px; }
   .icons button { min-height: 0; }
+}
+/* Phones: the game screen is small, so menus and the bag take the whole screen. */
+@media (max-width: 700px) {
+  .panel:not(.title) { position: fixed; inset: 0; z-index: 20; background: rgba(9, 13, 26, .97); padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); }
+  .msg { z-index: 30; }
+  #mapcv { height: auto; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .msg { animation: none; } }

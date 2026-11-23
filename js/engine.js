@@ -76,6 +76,7 @@
   function apply(r, before) {
     if (r.die) { die(r.die); return; }
     if (s.score > before) updateScore();
+    syncMapBtn();
     showMsgs(r.say, () => {
       if (s.score > before) sfx.score();
       if (r.win) { setTimeout(() => win(r.win), 300); return; }
@@ -89,8 +90,11 @@
     fade = 1;
     const before = s.score;
     const lines = G.enter(s, go);
+    // Arriving at a screen edge: start just off it and walk in, the way the old games did.
+    const edge = go.x <= 32 ? -26 : go.x >= 288 ? 26 : 0;
+    if (edge) { s.x = go.x + edge; walking = { pts: [[go.x, go.y]] }; }
     if (s.score > before) sfx.score();
-    updateScore(); status(); renderItem(); M.start(themeFor());
+    updateScore(); status(); renderItem(); syncMapBtn(); M.start(themeFor());
     autosave();
     if (lines && lines.length) showMsgs(lines);
   }
@@ -111,7 +115,7 @@
   const mc = $('mapcv'), mx = mc.getContext('2d');
   let mapOpen = false;
   function openMap() {
-    if (!G.canSail(s)) { showMsgs(['You can only sail from your boat. Head back to it first.']); return; }
+    if (!G.canSail(s)) { showMsgs([G.has(s, 'compass') ? 'The magic map\'s ink won\'t move indoors. It needs open sky.' : 'You don\'t have a map.']); return; }
     mapOpen = true; $('map-hint').textContent = 'Tap an island to set sail.'; openPanel('map');
   }
   const mapXY = e => { const b = mc.getBoundingClientRect(); return [(e.clientX - b.left) * 320 / b.width, (e.clientY - b.top) * 200 / b.height]; };
@@ -121,8 +125,7 @@
   $('map-close').addEventListener('click', () => { mapOpen = false; closePanels(); });
 
   // ---------- walking ----------
-  const clampWalk = (x, y) => { const [x0, y0, x1, y1] = G.ROOMS[s.room].walk; return [Math.max(x0, Math.min(x1, x)), Math.max(y0, Math.min(y1, y))]; };
-  function walkTo(x, y, then) { const [tx, ty] = clampWalk(x, y); walking = { tx, ty, then }; }
+  function walkTo(x, y, then) { walking = { pts: G.path(s.room, s.x, s.y, x, y), then }; }
   const scaleAt = y => { const sc = G.ROOMS[s.room].scale; if (!sc) return 1; const [y0, s0, y1, s1] = sc; return s0 + (s1 - s0) * Math.max(0, Math.min(1, (y - y0) / (y1 - y0))); };
 
   // ---------- input ----------
@@ -215,32 +218,59 @@
     applyCursor();
   }
   $('btn-inv').addEventListener('click', () => { if (!busy) { $('icons').classList.remove('show'); openInv(); } });
+  $('btn-map').addEventListener('click', () => { if (!busy) { $('icons').classList.remove('show'); openMap(); } });
+  const syncMapBtn = () => { $('btn-map').hidden = !G.has(s, 'compass'); $('icons').classList.toggle('has-map', G.has(s, 'compass')); };
   $('btn-menu').addEventListener('click', () => { if (!busy) { $('icons').classList.remove('show'); openPanel('menu'); } });
 
-  // ---------- inventory ----------
-  let invSel = null;
+  // ---------- inventory: its own little verb bar, like the old games ----------
+  let invSel = null, invVerb = 'look', combining = false;
+  function invSay(r) {
+    if (r.map) { closePanels(); openMap(); return; }
+    if (r.sound === 'whistle') tone([659, 784, 988], 'sine', 0.22, 0.06);
+    $('inv-desc').textContent = (r.say || []).map(l => Array.isArray(l) ? `“${l[1]}”` : l).join(' ');
+  }
+  function setInvVerb(v) {
+    invVerb = v; combining = v === 'combine';
+    document.querySelectorAll('[data-iverb]').forEach(b => b.setAttribute('aria-pressed', b.dataset.iverb === v));
+    if (combining) $('inv-desc').textContent = invSel ? `Use ${G.ITEMS[invSel].name} on which item?` : 'Pick the first item, then the item to use it on.';
+  }
   function openInv() {
-    const grid = $('inv-grid'); grid.innerHTML = ''; invSel = null;
-    $('inv-desc').textContent = s.inv.length ? 'Tap an item to examine it.' : 'You aren\'t carrying anything yet.';
-    $('inv-use').hidden = true;
+    const grid = $('inv-grid'); grid.innerHTML = ''; invSel = null; setInvVerb('look');
+    $('inv-desc').textContent = s.inv.length ? 'Pick an action, then an item.' : 'You aren\'t carrying anything yet.';
     s.inv.forEach(id => {
-      const b = document.createElement('button'); b.className = 'inv-item'; b.setAttribute('aria-label', G.ITEMS[id].name);
+      const b = document.createElement('button'); b.className = 'inv-item'; b.setAttribute('aria-label', G.ITEMS[id].name); b.dataset.id = id;
       const c = document.createElement('canvas'); c.width = c.height = 24; A.items[id](c.getContext('2d'));
       const l = document.createElement('span'); l.textContent = G.ITEMS[id].name;
       b.append(c, l);
       b.addEventListener('click', () => {
+        if (combining && invSel && invSel !== id) { invSay(G.invAct(s, invSel, 'item', id)); combining = false; setInvVerb('look'); return; }
         invSel = id; grid.querySelectorAll('.inv-item').forEach(x => x.classList.toggle('sel', x === b));
-        $('inv-desc').textContent = G.ITEMS[id].desc; $('inv-use').hidden = false;
-        $('inv-use').textContent = id === 'compass' ? 'Unroll the chart' : 'Use ' + G.ITEMS[id].name;
+        if (invVerb === 'select') { item = id; renderItem(); setVerb('item'); closePanels(); return; }
+        if (combining) { setInvVerb('combine'); return; }
+        invSay(G.invAct(s, id, invVerb));
       });
       grid.append(b);
     });
     openPanel('inv');
   }
-  $('inv-use').addEventListener('click', () => {
-    if (invSel === 'compass') { closePanels(); openMap(); return; }
-    item = invSel; renderItem(); setVerb('item'); closePanels();
-  });
+  document.querySelectorAll('[data-iverb]').forEach(b => b.addEventListener('click', () => {
+    const v = b.dataset.iverb;
+    if (v === 'select' && invSel) { item = invSel; renderItem(); setVerb('item'); closePanels(); return; }
+    setInvVerb(v);
+    if (v !== 'combine' && v !== 'select' && invSel) invSay(G.invAct(s, invSel, v));
+    if (v === 'select' && !invSel) $('inv-desc').textContent = 'Pick the item you want to use in the world.';
+  }));
+
+  // ---------- hint book ----------
+  function openHints() {
+    const h = G.hints(s);
+    $('hint-q').textContent = h.q; $('hint-a').textContent = '';
+    $('hint-nudge').hidden = false; $('hint-answer').hidden = true;
+    $('hint-nudge').onclick = () => { $('hint-a').textContent = h.nudge; $('hint-nudge').hidden = true; $('hint-answer').hidden = false; };
+    $('hint-answer').onclick = () => { $('hint-a').textContent = h.answer; $('hint-answer').hidden = true; };
+    openPanel('hints');
+  }
+  $('m-hints').addEventListener('click', openHints);
 
   // ---------- panels ----------
   function openPanel(id) { busy = true; document.querySelectorAll('.panel').forEach(p => p.hidden = p.id !== id); const f = $(id).querySelector('button:not([disabled])'); if (f) f.focus(); }
@@ -289,7 +319,7 @@
 
   function startFrom(state) {
     s = state; item = null; walking = null; scene = null; mapOpen = false; setVerb('walk'); closePanels(); busy = false;
-    updateScore(); status(); renderItem(); fade = 1; M.start(themeFor());
+    updateScore(); status(); renderItem(); syncMapBtn(); fade = 1; M.start(themeFor());
   }
   function newGame() { startFrom(G.newState()); showMsgs(G.enter(s, { to: 'beach', x: 160, y: 172 }) || []); }
 
@@ -355,11 +385,14 @@
     if (typeof scene === 'function') scene(cx, s, t);
     else {
       if (walking) {
-        const dx = walking.tx - s.x, dy = walking.ty - s.y, d = Math.hypot(dx, dy);
+        const [tx, ty] = walking.pts[0], dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy);
         const sp = (fast ? 120 : 70) * dt * scaleAt(s.y);
         if (Math.abs(dx) > 0.5) dir = dx > 0 ? 1 : -1;
-        if (d <= sp) { s.x = walking.tx; s.y = walking.ty; const f = walking.then; walking = null; frame = 0; if (f) f(); }
-        else { s.x += dx / d * sp; s.y += dy / d * sp; frameT += dt; if (frameT > 0.14) { frameT = 0; frame++; } }
+        frameT += dt; if (frameT > 0.14) { frameT = 0; frame++; }
+        if (d <= sp) {
+          s.x = tx; s.y = ty; walking.pts.shift();
+          if (!walking.pts.length) { const f = walking.then; walking = null; frame = 0; if (f) f(); }
+        } else { s.x += dx / d * sp; s.y += dy / d * sp; }
       }
       const room = A.rooms[s.room];
       cx.clearRect(0, 0, 320, 200);

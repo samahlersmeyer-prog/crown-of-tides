@@ -23,7 +23,7 @@
     oilcan: { name: 'Oil can', desc: 'A brass oil can with a long spout. Pim has written "DO NOT DRINK" on it, which raises questions.' },
     lantern: { name: 'Forge lantern', desc: 'A brass lantern holding a living ember from the Clockmakers\' forge. It never goes out and it never burns your fingers.' },
     fish: { name: 'Silver fish', desc: 'A plump silver fish, wrapped in paper. It smells exactly like a fish.' },
-    compass: { name: 'Tide chart', desc: 'Hester\'s sea chart of the Tidewater Isles, with a compass needle set into the corner that always points the way home. With it, you can sail to any island.' },
+    compass: { name: 'Magic map', desc: 'Hester\'s magic map of the Tidewater Isles. The ink moves with the tides, and the little compass rose always points the way home. Touch an island on it, outdoors, and the map carries you there.' },
     feather: { name: 'Feather of Dawn', desc: 'A long golden feather from the roc of the Sentinel Isle. It glows like the first minute of morning. Old stories say dawn breaks any spell cast in the dark.' },
     mirror: { name: 'Mirror shell', desc: 'A shell polished to a perfect mirror by the mer-queen Nerissa. "What is cast at you," she said, "send home."' },
     letter: { name: "Varrick's letter", desc: 'A letter in the Steward\'s own hand: "The old king sleeps in the tower and will not wake. The true will is ash. My copy names me regent and Elowen\'s husband. The scribe has been paid. Burn this." He did not burn it.' }
@@ -62,8 +62,10 @@
   const ROOMS = {
     // ================= ISLE OF THE CROWN =================
     beach: {
+      outdoors: true,
       name: 'Shipwreck Beach', isle: 'crown', scale: [140, 0.82, 194, 1.05],
       walk: [12, 142, 308, 194],
+      block: [[18, 142, 80, 8]],
       enter: s => once(s, 'seen_beach', [
         'Salt water. Sand in places sand should never be. You are alive, which is more than can be said for your ship.',
         'Somewhere beyond these dunes is Elowen\'s castle. Time to find out whether she was worth a shipwreck.'
@@ -97,6 +99,7 @@
     },
 
     cliffs: {
+      outdoors: true,
       name: 'The Singing Cliffs', isle: 'crown', scale: [146, 0.85, 192, 1.02],
       walk: [70, 146, 306, 192],
       spots: [
@@ -131,8 +134,10 @@
     },
 
     square: {
+      outdoors: true,
       name: 'Saltmarrow Village', isle: 'crown', scale: [150, 0.88, 194, 1.04],
       walk: [12, 150, 244, 194],
+      block: [[124, 148, 72, 12]],
       enter: s => once(s, 'seen_square', ['The village of Saltmarrow huddles under the castle walls. Bunting hangs everywhere, but nobody looks very festive.']),
       spots: [
         { id: 'west', name: 'path to the beach', rect: [0, 140, 12, 60], at: [12, 172], exit: { to: 'beach', x: 294, y: 170 } },
@@ -145,7 +150,7 @@
           hand: () => say('Tearing down royal decrees is the sort of thing that gets you noticed by guards.')
         },
         {
-          id: 'fountain', name: 'fountain', rect: [124, 112, 72, 40], at: [160, 156],
+          id: 'fountain', name: 'fountain', rect: [124, 112, 72, 40], at: [160, 166],
           look: () => say('A fountain of a leaping dolphin. Its basin is full of coins tossed in for luck.'),
           hand: () => ({ die: 'You scoop a handful of coins from the fountain. The guards at the gate are on you in seconds.\n\n"Robbing the Wishing Fountain on the princess\'s wedding day? The Steward will love this."\n\nYou spend the rest of your life in the Steward\'s dungeon, wishing.' })
         },
@@ -195,6 +200,7 @@
     },
 
     docks: {
+      outdoors: true,
       name: 'Saltmarrow Docks', isle: 'crown', scale: [150, 0.86, 192, 1.03],
       walk: [14, 150, 196, 192],
       spots: [
@@ -203,7 +209,7 @@
         {
           id: 'nell', name: 'ferrywoman', rect: [168, 116, 26, 50], at: [160, 170],
           look: () => say('A weathered ferrywoman in an oilskin coat, chewing on an unlit pipe.'),
-          talk: s => flag(s, 'paid') ? say(['nell', 'Hop in whenever you\'re ready. Mists or Clocks, I\'ll run you back and forth. Nothing else to do on a wedding day.'], ['nell', 'The far isles? Not without a proper chart, and only Hester has one of those.'])
+          talk: s => flag(s, 'paid') ? say(['nell', 'Hop in whenever you\'re ready. Mists or Clocks, I\'ll run you back and forth. Nothing else to do on a wedding day.'], ['nell', 'The far isles? Not in my boat. Hester at the lighthouse has a map that goes anywhere, they say.'])
             : say(['nell', 'Ferry to the near isles. One token. No token, no boat. No exceptions, not even for handsome shipwrecked fellows.']),
           item: (s, i) => {
             if (i === 'token') { lose(s, 'token'); set(s, 'paid'); pts(s, 'paid', 5); return say('She bites the token, nods, and pockets it.', ['nell', 'That buys you as many trips as you like today. Climb aboard when you\'re ready.']); }
@@ -243,6 +249,7 @@
 
     // ================= ISLE OF MISTS =================
     mistshore: {
+      outdoors: true,
       name: 'Isle of Mists', isle: 'mists', scale: [146, 0.85, 194, 1.04],
       walk: [12, 146, 300, 194],
       enter: s => once(s, 'seen_mist', ['The mist is so thick you could spread it on bread. Strange lights drift between the trees.']),
@@ -267,6 +274,7 @@
     oracle: {
       name: "The Oracle's Grotto", isle: 'mists',
       walk: [30, 152, 290, 194],
+      block: [[96, 150, 128, 6]],
       spots: [
         { id: 'out', name: 'way out', rect: [0, 194, 320, 6], at: [160, 192], exit: { to: 'mistshore', x: 160, y: 154 } },
         {
@@ -299,8 +307,10 @@
 
     // ================= ISLE OF CLOCKS =================
     clockharbor: {
+      outdoors: true,
       name: 'Isle of Clocks', isle: 'clocks', scale: [150, 0.86, 194, 1.03],
       walk: [14, 150, 240, 194],
+      block: [[82, 150, 20, 8], [194, 150, 20, 8]],
       enter: s => { pts(s, 'clocks', 3); return once(s, 'seen_clocks', ['A town of brass and copper, all gears and chimneys. Everyone in it is frozen in place: a baker mid-knead, a fishmonger mid-shout. Above it all, the great tower clock reads one minute to noon. It has, you suspect, for some time.']); },
       spots: [
         { id: 'boat', name: 'ferry boat', rect: [244, 160, 76, 40], at: [236, 178], look: () => say('Your boat, waiting in the harbor.'), hand: boatFrom('clocks'), walk: boatFrom('clocks') },
@@ -370,6 +380,7 @@
 
     // ================= SENTINEL ISLE =================
     sentbase: {
+      outdoors: true,
       name: 'Sentinel Isle', isle: 'sentinels', scale: [156, 0.86, 194, 1.03],
       walk: [14, 156, 306, 194],
       enter: s => { delete s.flags.asked; return once(s, 'seen_sent', ['A single great spire of rock rises from the sea. Two stairways are cut into it, side by side, and at the foot of each stands a stone sentinel.', 'A plaque reads: "ONE OF US SPEAKS ONLY TRUTH. ONE OF US ONLY LIES. ONE STAIR IS SAFE. YOU MAY ASK ONE QUESTION."']); },
@@ -384,8 +395,10 @@
     },
 
     aerie: {
+      outdoors: true,
       name: "The Roc's Aerie", isle: 'sentinels', scale: [150, 0.85, 194, 1.03],
       walk: [20, 150, 300, 194],
+      block: [[152, 150, 128, 14]],
       enter: s => { pts(s, 'aerie', 10); return once(s, 'seen_aerie', ['You reach the summit, wind howling. A nest the size of a cottage sits on the peak, and in it a fluffy chick as tall as you are, screeching for food.', 'High above, a vast golden bird circles. Its mother, presumably. She has noticed you.']); },
       spots: [
         { id: 'down', name: 'stairs down', rect: [0, 120, 18, 80], at: [20, 172], exit: { to: 'sentbase', x: 110, y: 170 } },
@@ -420,8 +433,10 @@
 
     // ================= CORAL STRAND =================
     reef: {
+      outdoors: true,
       name: 'The Coral Strand', isle: 'reef', scale: [150, 0.86, 194, 1.03],
       walk: [14, 150, 240, 194],
+      block: [[40, 168, 60, 18]],
       enter: s => once(s, 'seen_reef', ['A beach of pink coral sand. Rocks curl out into a turquoise lagoon. It is beautiful, and completely deserted.']),
       spots: [
         { id: 'boat', name: 'boat', rect: [250, 160, 70, 40], at: [236, 178], look: () => say('Your boat, waiting in the shallows.'), hand: boatFrom('reef'), walk: boatFrom('reef') },
@@ -472,6 +487,7 @@
     cellar: {
       name: 'Castle Cellar', isle: 'crown',
       walk: [16, 154, 276, 194],
+      block: [[220, 154, 42, 10]],
       spots: [
         { id: 'back', name: 'tunnel', rect: [0, 120, 16, 80], at: [16, 176], exit: { to: 'tunnel', x: 248, y: 162 } },
         { id: 'stairs', name: 'stairs up', rect: [278, 30, 42, 120], at: [274, 160], exit: { to: 'hall', x: 30, y: 180 } },
@@ -609,7 +625,7 @@
   function lightLamp(s) {
     if (flag(s, 'lit')) return say('The lamp is already blazing.');
     lose(s, 'lantern'); set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); pts(s, 'lit', 15); pts(s, 'compass', 5);
-    return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], ['hester', 'I promised anything I own. Take my chart. With it you can sail to any of the isles, even the far ones.'], 'From now on, use your boat or the chart in your bag to sail anywhere.');
+    return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], ['hester', 'I promised anything I own. Take my magic map. My grandmother had it off a sea-witch. Touch an island on it, under open sky, and it\'ll carry you there.'], 'You can now use the magic map from any outdoor screen. Look for the map button on your icon bar.');
   }
 
   function sentinelAsk(s, who) {
@@ -645,6 +661,128 @@
     };
   }
 
+
+  // ---- things you can do with items in the bag ----
+  const ITEM_ACTS = {
+    ring: { hand: () => say('You polish the ring on your sleeve. The stag gleams. Very princely.'), talk: () => say(['rowan', 'Don\'t worry, Father. I haven\'t lost it.']) },
+    bottle: { hand: () => say('You tug at the cork until your fingers ache. It\'s stuck fast. Someone with stronger teeth, maybe.'), talk: () => say('You shout into the bottle. It doesn\'t help.') },
+    conch: { hand: () => say('You hold the conch to your ear. Under the hush of the sea, a voice whispers: "...the Oracle... bring me to the Oracle..."'), talk: () => say(['rowan', 'Hello?'], 'The conch hushes back at you. Somebody out there listens to shells.') },
+    token: { hand: () => say('You flip the token. Boat side up. That seems like a sign.') },
+    glowcap: { hand: () => say('It\'s soft and slightly warm. You resist the urge to eat it. Mostly.'), talk: () => say('The glowcap brightens a little, as if pleased to be noticed.') },
+    whistle: { hand: () => ({ say: ['You play the three etched notes. They ring out sweetly, and somewhere far off, something seems to listen.'], sound: 'whistle' }), talk: () => say('You can\'t talk and whistle at the same time. Nobody can.') },
+    oilcan: { hand: () => say('A drop of oil lands on your boot. Now your boot squeaks less. Your boot didn\'t squeak before.') },
+    lantern: { hand: () => say('The ember is warm but never hot. You could hold it all day.'), talk: () => say('The ember crackles, which you choose to take as friendly.') },
+    fish: { hand: () => say('It\'s slippery, silver and definitely a fish. Something hungry would love it.'), talk: () => say('The fish has no comment.') },
+    compass: { hand: () => ({ map: true }), talk: () => say('The ink on the map ripples, as if waiting for you to choose.') },
+    feather: { hand: () => say('The feather is warm as sunlight. Holding it, you feel like getting up early, which is a first.'), talk: () => say('It glows a little brighter. Dawn breaks spells cast in the dark, the stories say.') },
+    mirror: { hand: () => say('You look into the mirror shell. You look terrible. Shipwrecks will do that.'), talk: () => say(['rowan', 'What is cast at you, send home.'], 'The mirror shell seems to hum.') },
+    letter: { hand: () => say(ITEMS.letter.desc) }
+  };
+  const COMBOS = {
+    'oilcan+ring': 'Now your ring is shiny AND slippery. That seems like a mistake.',
+    'glowcap+lantern': 'The glowcap and the ember glow at each other. It\'s oddly sweet.',
+    'feather+mirror': 'The feather\'s reflection glows twice as bright. Pretty, but it doesn\'t change anything.',
+    'fish+lantern': 'You are not cooking the roc\'s lunch.',
+    'bottle+oilcan': 'You oil the cork. It\'s still stuck, just slicker.',
+    'conch+whistle': 'You whistle into the conch. It whistles back, sort of.'
+  };
+  function invAct(s, id, verb, other) {
+    if (!has(s, id)) return {};
+    if (verb === 'look') return say(ITEMS[id].desc);
+    if (verb === 'item') {
+      if (!other || other === id) return say('You can\'t use something on itself.');
+      const key = [id, other].sort().join('+');
+      return say(COMBOS[key] || 'Those two don\'t go together.');
+    }
+    const h = ITEM_ACTS[id] && ITEM_ACTS[id][verb];
+    return h ? h(s) : say(verb === 'talk' ? 'Talking to your belongings. It\'s been a long day.' : 'You turn it over in your hands. Nothing happens.');
+  }
+
+  // ---- hint book: a nudge, then the answer, for whatever comes next ----
+  function hints(s) {
+    const H = (q, nudge, answer) => ({ q, nudge, answer });
+    const f = k => flag(s, k), h = i => has(s, i);
+    if (!f('ring_taken') || !f('bottle_taken') || !f('conch_taken')) return H('What should I do on the beach?', 'Shipwrecks leave things behind. So does the tide.', 'Use the Hand on the wreckage, the bottle and the conch shell to pick them all up.');
+    if (!f('traded')) return H('How do I get off this island?', 'Someone in the village buys what the sea brings, especially secrets.', 'Give the corked bottle to Old Bram in the curio shop. He\'ll give you a ferry token.');
+    if (!f('paid')) return H('What is the ferry token for?', 'Ferries need paying.', 'Use the ferry token on the ferrywoman at the docks.');
+    if (!f('got_whistle')) return H('What do I do on the Isle of Mists?', 'The conch keeps whispering about someone. Also: don\'t follow strange lights.', 'Go into the grotto and give the conch shell to the Oracle. Pick a glowcap on the shore while you\'re there.');
+    if (!h('glowcap') && !h('lantern') && !f('door_open')) return H('Should I take anything from the Isle of Mists?', 'Tunnels are dark.', 'Pick a glowing mushroom on the Isle of Mists shore.');
+    if (!h('oilcan') && !f('clock')) return H('Why is everyone frozen on the Isle of Clocks?', 'One person in town is still moving. He keeps his own clocks.', 'Talk to Pim in his workshop. He\'ll give you an oil can.');
+    if (!f('clock')) return H('How do I fix the clock?', 'The great gear is stuck.', 'Go into the clock tower and use the oil can on the great gear.');
+    if (!f('got_lantern')) return H('The clock is running. Now what?', 'Pim will want to thank you.', 'Go back to Pim and talk to him. He\'ll give you a forge lantern. Talk to the fishmonger, too.');
+    if (!f('got_fish')) return H('Is there anything else on the Isle of Clocks?', 'The town is moving again. Someone has fish to give away.', 'Talk to the fishmonger in the harbor. He\'ll give you a fish.');
+    if (!f('lit')) return H('What is the forge lantern for?', 'Who has been asking for true fire?', 'Take the docks path south to the lighthouse and give the lantern to Hester. She\'ll give you the magic map.');
+    if (!h('feather') && !f('pts_aerie')) return H('How do I get past the sentinels?', 'Ask a question whose answer is a lie either way.', 'Ask either sentinel what the OTHER one would say. Then climb the opposite stair.');
+    if (!f('fed')) return H('How do I deal with the roc?', 'Hungry babies make angry mothers.', 'Give the silver fish to the roc chick.');
+    if (!h('feather') && !f('pts_feather')) return H('Now what at the aerie?', 'The mother roc approves of you now.', 'Use the Hand on the golden feathers in the nest.');
+    if (!f('got_mirror')) return H('What do I do on the Coral Strand?', 'The guidebook says the mer-folk answer only to music.', 'Use the silver whistle on the lagoon. Then show Queen Nerissa your signet ring.');
+    if (!f('door_open')) return H('How do I get into the castle?', 'The Oracle mentioned a door that opens to a song.', 'Use the silver whistle on the carved door at the Singing Cliffs.');
+    if (!f('letter_found')) return H('What should I do in the cellar?', 'Something in the wall doesn\'t quite fit. And let sleeping guards lie.', 'Use the Hand on the loose stone in the cellar wall. Don\'t touch or talk to the guard.');
+    if (!f('trust')) return H('Nobody believes me in the Great Hall!', 'Elowen saw you once, in a mirror. Remind her.', 'Show your signet ring to Elowen.');
+    if (!f('unmasked')) return H('How do I stop the wedding?', 'The guard obeys its captain.', 'Give Varrick\'s letter to Captain Orla.');
+    if (!f('beaten')) return H('How do I beat Varrick?', 'What is cast at you, send home.', 'Use the mirror shell on Varrick.');
+    return H('How do I wake the king?', 'Dawn breaks spells cast in the dark.', 'Use the Feather of Dawn on the sleeping king.');
+  }
+
+  // ---- pathfinding: A* on a 4px grid inside the walk box, around blocked rects ----
+  const CELL = 4;
+  function freeAt(room, x, y) {
+    const r = ROOMS[room], [x0, y0, x1, y1] = r.walk;
+    if (x < x0 || x > x1 || y < y0 || y > y1) return false;
+    return !(r.block || []).some(([bx, by, bw, bh]) => x >= bx && x < bx + bw && y >= by && y < by + bh);
+  }
+  function nearestFree(room, x, y) {
+    const [x0, y0, x1, y1] = ROOMS[room].walk;
+    x = Math.max(x0, Math.min(x1, x)); y = Math.max(y0, Math.min(y1, y));
+    if (freeAt(room, x, y)) return [x, y];
+    for (let d = CELL; d < 200; d += CELL) for (let a = 0; a < 16; a++) {
+      const nx = x + Math.cos(a * Math.PI / 8) * d, ny = y + Math.sin(a * Math.PI / 8) * d;
+      if (freeAt(room, nx, ny)) return [nx, ny];
+    }
+    return [x, y];
+  }
+  // Returns waypoints from (fx,fy) to the nearest free point to (tx,ty).
+  function path(room, fx, fy, tx, ty) {
+    [tx, ty] = nearestFree(room, tx, ty);
+    if (!(ROOMS[room].block || []).length) return [[tx, ty]];
+    const [x0, y0, x1, y1] = ROOMS[room].walk, W = Math.floor((x1 - x0) / CELL) + 1, Hh = Math.floor((y1 - y0) / CELL) + 1;
+    const cell = (x, y) => [Math.round((x - x0) / CELL), Math.round((y - y0) / CELL)];
+    const pt = (i, j) => [x0 + i * CELL, y0 + j * CELL];
+    const ok = (i, j) => i >= 0 && j >= 0 && i < W && j < Hh && freeAt(room, ...pt(i, j));
+    let [si, sj] = cell(fx, fy); const [ti, tj] = cell(tx, ty);
+    if (!ok(si, sj)) { const n = nearestFree(room, fx, fy); [si, sj] = cell(n[0], n[1]); }
+    const key = (i, j) => j * W + i, open = [[si, sj]], g = { [key(si, sj)]: 0 }, from = {}, closed = new Set();
+    const hfn = (i, j) => Math.hypot(i - ti, j - tj);
+    while (open.length) {
+      let bi = 0; for (let k = 1; k < open.length; k++) if (g[key(...open[k])] + hfn(...open[k]) < g[key(...open[bi])] + hfn(...open[bi])) bi = k;
+      const [ci, cj] = open.splice(bi, 1)[0], ck = key(ci, cj);
+      if (ci === ti && cj === tj) {
+        const out = [[tx, ty]]; let k = ck;
+        while (from[k] !== undefined) { k = from[k]; const i = k % W, j = Math.floor(k / W); out.unshift(pt(i, j)); }
+        return smooth(room, fx, fy, out);
+      }
+      closed.add(ck);
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const ni = ci + di, nj = cj + dj, nk = key(ni, nj);
+        if (!ok(ni, nj) || closed.has(nk)) continue;
+        const ng = g[ck] + Math.hypot(di, dj);
+        if (g[nk] === undefined || ng < g[nk]) { if (g[nk] === undefined) open.push([ni, nj]); g[nk] = ng; from[nk] = ck; }
+      }
+    }
+    return [[tx, ty]];
+  }
+  // Drop waypoints you can see past, so the walk looks natural.
+  function smooth(room, fx, fy, pts) {
+    const clear = (ax, ay, bx, by) => { const n = Math.ceil(Math.hypot(bx - ax, by - ay) / 2); for (let i = 1; i <= n; i++) if (!freeAt(room, ax + (bx - ax) * i / n, ay + (by - ay) * i / n)) return false; return true; };
+    const out = []; let cx = fx, cy = fy, i = 0;
+    while (i < pts.length) {
+      let j = pts.length - 1;
+      while (j > i && !clear(cx, cy, pts[j][0], pts[j][1])) j--;
+      out.push(pts[j]); [cx, cy] = pts[j]; i = j + 1;
+    }
+    return out;
+  }
+
   const DEFAULTS = {
     look: 'Nothing special about it.',
     hand: 'You can\'t do anything with that.',
@@ -666,7 +804,7 @@
     const sp = findSpot(s, spotId);
     if (!sp) return say(DEFAULTS[verb] || '');
     if (verb === 'item' && !has(s, item)) return say(DEFAULTS.item);
-    if (verb === 'item' && item === 'compass') return sp.id === 'boat' ? { map: true } : say('The chart is for sailing. Use it at your boat.');
+    if (verb === 'item' && item === 'compass') return { map: true };
     let r = null;
     const h = sp[verb];
     if (typeof h === 'function') r = h(s, item);
@@ -678,13 +816,13 @@
 
   const choose = (s, id, opt) => CHOICES[id] ? CHOICES[id](s, opt) : {};
 
-  // Sail by chart. Only from a room with a boat.
-  function canSail(s) { return flag(s, 'compass') && ROOMS[s.room].spots.some(sp => sp.id === 'boat'); }
+  // The magic map works from any outdoor screen.
+  function canSail(s) { return flag(s, 'compass') && !!ROOMS[s.room].outdoors; }
   function travel(s, isle) {
     if (!ISLES[isle]) return {};
-    if (!canSail(s)) return say('You need to be at your boat to sail.');
-    if (ROOMS[s.room].isle === isle) return say('You\'re already here.');
-    return { say: ['You unroll Hester\'s chart and set your course for ' + ISLES[isle].name + '.'], go: ISLES[isle] };
+    if (!canSail(s)) return say(flag(s, 'compass') ? 'The map\'s ink won\'t move indoors. It needs open sky.' : 'You don\'t have a map.');
+    if (s.room === ISLES[isle].to) return say('You\'re already here.');
+    return { say: ['You touch ' + ISLES[isle].name + ' on the magic map. The ink swirls like a whirlpool, the world tilts, and...'], go: ISLES[isle] };
   }
 
   function enter(s, go) {
@@ -694,6 +832,6 @@
     return e ? e(s) : null;
   }
 
-  const api = { MAX_SCORE, ITEMS, ROOMS, ISLES, newState, act, choose, travel, canSail, enter, hitSpot, findSpot, spotsIn, has };
+  const api = { MAX_SCORE, ITEMS, ROOMS, ISLES, newState, act, choose, travel, canSail, enter, hitSpot, findSpot, spotsIn, has, invAct, hints, path, freeAt };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Game = api;
 })(this);

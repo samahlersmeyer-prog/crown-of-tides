@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1424">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Crown of Tides</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Cpath d=%22M2 12 3 4l3 4 2-5 2 5 3-4 1 8z%22 fill=%22%23e2b23a%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="frame">
+  <header class="bar">
+    <span id="status-left">Crown of Tides</span>
+    <span id="score">Score: 0 of 100</span>
+  </header>
+
+  <div class="stage">
+    <canvas id="screen" width="320" height="200" aria-label="Game screen"></canvas>
+
+    <div id="msg" class="msg" hidden tabindex="-1" role="dialog" aria-live="polite">
+      <p id="msg-text"></p>
+      <span class="msg-hint">Tap to continue</span>
+    </div>
+
+    <section id="title" class="panel title" hidden>
+      <h1>Crown<br>of Tides</h1>
+      <p class="tag">A shipwrecked prince. A princess in a mirror. A wedding at sundown.</p>
+      <div class="btns">
+        <button id="t-new">Begin the quest</button>
+        <button id="t-continue">Continue</button>
+      </div>
+    </section>
+
+    <section id="inv" class="panel" hidden aria-label="Inventory">
+      <h2>Inventory</h2>
+      <div id="inv-grid" class="inv-grid"></div>
+      <p id="inv-desc" class="inv-desc"></p>
+      <div class="btns">
+        <button id="inv-use" hidden>Use</button>
+        <button data-close>Close</button>
+      </div>
+    </section>
+
+    <section id="menu" class="panel" hidden aria-label="Menu">
+      <h2>Menu</h2>
+      <div class="btns col">
+        <button id="m-save">Save game</button>
+        <button id="m-restore">Restore game</button>
+        <button id="m-restart">Restart</button>
+        <button id="m-sound">Sound: On</button>
+        <button id="m-about">About</button>
+        <button data-close>Resume</button>
+      </div>
+    </section>
+
+    <section id="about" class="panel" hidden aria-label="About">
+      <h2>About</h2>
+      <p class="prose">An original fan-made adventure in the spirit of the classic Sierra quests of the early '90s. Point, click, and try everything. Dying is part of the fun. You can always try again.</p>
+      <p class="prose small">Story, art, and code are original. Not affiliated with Sierra or any King's Quest rights holder.</p>
+      <div class="btns"><button data-close>Close</button></div>
+    </section>
+
+    <section id="death" class="panel death" hidden role="alertdialog" aria-label="You have died">
+      <h2>You have died</h2>
+      <p id="death-text" class="prose"></p>
+      <div class="btns">
+        <button id="d-retry">Try again</button>
+        <button id="d-restore">Restore</button>
+        <button id="d-restart">Restart</button>
+      </div>
+    </section>
+
+    <section id="end" class="panel end" hidden aria-label="The end">
+      <h2>Happily Ever After</h2>
+      <p class="prose">Varrick spends the rest of his days counting fish in the castle dungeon. By sunset the Tidewater Isles have a new prince, and the cake turns out to be excellent.</p>
+      <p id="end-score" class="prose score-final"></p>
+      <div class="btns"><button id="e-again">Play again</button></div>
+    </section>
+  </div>
+
+  <nav class="icons" aria-label="Actions">
+    <button data-verb="walk" aria-pressed="true" title="Walk"><svg viewBox="0 0 24 24"><path d="M9 3h4v8l5 2c1.5.6 2 1.6 2 3v2H6V12z"/><path d="M6 21h14"/></svg><span>Walk</span></button>
+    <button data-verb="look" title="Look"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Look</span></button>
+    <button data-verb="hand" title="Take or use"><svg viewBox="0 0 24 24"><path d="M8 13V5a1.5 1.5 0 0 1 3 0v6M11 10V3.5a1.5 1.5 0 0 1 3 0V10M14 10V5a1.5 1.5 0 0 1 3 0v6M17 9a1.5 1.5 0 0 1 3 0v5a7 7 0 0 1-7 7h-1a7 7 0 0 1-5.6-2.8L3.6 14a1.6 1.6 0 0 1 2.5-2L8 14"/></svg><span>Hand</span></button>
+    <button data-verb="talk" title="Talk"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H10l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/></svg><span>Talk</span></button>
+    <button data-verb="item" id="btn-item" title="Use an item"><canvas id="item-icon" width="24" height="24"></canvas><span>Item</span></button>
+    <button id="btn-inv" title="Inventory"><svg viewBox="0 0 24 24"><path d="M5 9h14l-1 11H6z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/><path d="M10 13h4"/></svg><span>Bag</span></button>
+    <button id="btn-menu" title="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></button>
+  </nav>
+</main>
+<script src="js/game.js"></script>
+<script src="js/art.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>

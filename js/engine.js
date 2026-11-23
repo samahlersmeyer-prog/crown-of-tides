@@ -64,7 +64,7 @@
     busy = true;
     const line = queue.shift(), who = Array.isArray(line) ? line[0] : null, text = Array.isArray(line) ? line[1] : line;
     const pc = $('portrait'), p = pc.getContext('2d');
-    p.clearRect(0, 0, 56, 56);
+    p.clearRect(0, 0, pc.width, pc.height);
     pc.hidden = !(who && A.portrait(p, who));
     $('msg-who').textContent = who ? SPEAKER[who] || '' : '';
     $('msg-who').hidden = !who;

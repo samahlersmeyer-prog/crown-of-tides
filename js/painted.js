@@ -39,7 +39,7 @@
     workshop: { over(c, s, t) { if (!s.flags.got_rattler) { R(c, '#8c1d26', 140, 106, 20, 11); circ(c, '#e2b23a', 144, 105, 3); circ(c, '#e2b23a', 156, 105, 3); R(c, '#f4ead2', 138, 117, 24, 5); c.fillStyle = '#8c1d26'; c.font = '4px monospace'; c.fillText('DO NOT WIND', 139, 121); } } },
     gearworks: { over(c, s, t) { if (s.flags.clock) A.flame(c, 152, 124, 56, 42, t, 7); } },
     sentbase: { over(c, s, t) { boat(c, 22, 140, t); } },
-    aerie: { over(c, s, t) { if (!s.inv.includes('feather')) { sparkle(c, 272, 88, t); glow(c, 270, 88, 10, '255,220,100', 0.4); } } },
+    aerie: { over(c, s, t) { if (!s.flags.fed) { const rx = 160 + Math.cos(t * 0.5) * 110, ry = 34 + Math.sin(t) * 8, w = Math.sin(t * 3) * 6; c.fillStyle = 'rgba(120,80,30,.85)'; c.beginPath(); c.moveTo(rx - 26, ry + w); c.quadraticCurveTo(rx - 10, ry - 6, rx, ry - 2); c.quadraticCurveTo(rx + 10, ry - 6, rx + 26, ry + w); c.lineTo(rx, ry + 5); c.closePath(); c.fill(); } if (!s.inv.includes('feather')) { sparkle(c, 272, 88, t); glow(c, 270, 88, 10, '255,220,100', 0.4); } } },
     tidepools: { over(c, s, t) { if (!s.flags.got_glass) { sparkle(c, 108, 186, t); ell(c, '#6ad0a0', 108, 187, 3, 1.6); } } },
     cellar: { over(c, s, t) { if (s.flags.coin_found) R(c, '#120e0a', 190, 70, 14, 9); } },
     study: { over(c, s, t) { if (A.creature(c, 'raven', 70, 66 + (Math.sin(t * 2) > 0.9 ? -2 : 0), 20, true)) return; const hop = Math.sin(t * 2) > 0.9 ? -2 : 0; ell(c, '#0e0e14', 70, 58 + hop, 6, 8); circ(c, '#0e0e14', 72, 49 + hop, 4.5); c.fillStyle = '#3a3a40'; c.beginPath(); c.moveTo(76, 49 + hop); c.lineTo(81, 51 + hop); c.lineTo(76, 52 + hop); c.fill(); R(c, '#e8e8f0', 73, 47 + hop, 1, 1); } },

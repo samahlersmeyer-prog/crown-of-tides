@@ -82,7 +82,7 @@
   }
   // Painted sprites (assets/sprites/*.png, cut from AI-painted sheets) replace the pixel figures when loaded.
   const SPR = {};
-  ['rowan_0', 'rowan_1', 'rowan_2', 'rowan_3', 'bram', 'nell', 'hester', 'marla', 'fennick', 'oracle', 'pim', 'fishmonger', 'baker', 'guard', 'bertha', 'orla', 'varrick', 'elowen_veil', 'elowen', 'weft', 'goat', 'chick', 'anvil', 'hound', 'hound_sleep', 'octopus', 'crab', 'raven'].forEach(n => { if (typeof Image === 'undefined') return; const im = new Image(); im.src = 'assets/sprites/' + n + '.png'; SPR[n] = im; });
+  ['rowan_0', 'rowan_1', 'rowan_2', 'rowan_3', 'bram', 'nell', 'hester', 'marla', 'fennick', 'oracle', 'pim', 'fishmonger', 'baker', 'guard', 'bertha', 'orla', 'varrick', 'elowen_veil', 'elowen', 'weft', 'goat', 'chick', 'anvil', 'hound', 'hound_sleep', 'octopus', 'crab', 'raven', 'goggle', 'lugs', 'snoot', 'lick', 'grabby', 'nerissa', 'roc'].forEach(n => { if (typeof Image === 'undefined') return; const im = new Image(); im.src = 'assets/sprites/' + n + '.png'; SPR[n] = im; });
   const sprReady = n => SPR[n] && SPR[n].complete && SPR[n].naturalWidth > 0;
   function drawSprite(c, im, x, y, H, mirror) {
     const W = im.naturalWidth * H / im.naturalHeight, X = Math.round(x), Y = Math.round(y);
@@ -837,6 +837,8 @@
       } },
       { y: 120, d: c => {
         if (!s.flags.fed) return;
+        const PT = window.Art && window.Art.hasPainting && window.Art.hasPainting('aerie');
+        if (creature(c, 'roc', PT ? 78 : 92, PT ? 152 : 130, PT ? 96 : 84, true)) return;
         ell(c, '#c8922a', 90, 90, 46, 26); ell(c, '#e2b23a', 84, 84, 30, 14);
         poly(c, '#a87420', [50, 90, 20, 60, 70, 76]); poly(c, '#a87420', [130, 86, 150, 116, 110, 104]);
         circ(c, '#d8a23a', 134, 58, 14); poly(c, '#e8c060', [146, 56, 164, 62, 146, 66]); circ(c, '#111', 138, 54, 2); circ(c, '#fff', 138.6, 53.4, 0.6);
@@ -865,7 +867,9 @@
     },
     actors: (s, t) => wardenActors(s, t).concat(s.flags.summoned ? [{ y: 130, d: c => {
       const sw = Math.sin(Date.now() / 600) * 2;
-      const PT = window.Art && window.Art.hasPainting && window.Art.hasPainting('reef'); c.save(); if (PT) c.translate(-3, -12);
+      const PT = window.Art && window.Art.hasPainting && window.Art.hasPainting('reef');
+      if (creature(c, 'nerissa', 180, (PT ? 122 : 134) + sw * 0.3, 52, false)) return;
+      c.save(); if (PT) c.translate(-3, -12);
       poly(c, '#7ad0c8', [176, 122, 186, 122, 196 + sw, 132, 204 + sw, 126, 200 + sw, 136, 180, 132]);
       R(c, '#7ad0c8', 172, 112, 14, 12);
       R(c, '#d8b8a0', 172, 100, 12, 12); R(c, '#e8c8b0', 174, 88, 9, 10);
@@ -882,6 +886,7 @@
   function wardenActors(s, t) {
     return WARDEN_ART.filter(([id]) => !s.flags['w_' + id]).map(([id, x, y, col], i) => ({ y, d: c => {
       const hop = Math.abs(Math.sin(t * 3 + i * 1.3)) * 2, Y = y - hop;
+      if (creature(c, id, x, Y, id === 'lugs' || id === 'grabby' ? 26 : 24, false)) return;
       ell(c, 'rgba(0,0,0,.25)', x, y, 7, 2);
       R(c, col, x - 5, Y - 14, 10, 12); R(c, shade(col, -30), x - 5, Y - 3, 3, 3); R(c, shade(col, -30), x + 2, Y - 3, 3, 3);
       circ(c, col, x, Y - 19, 6);
@@ -1209,7 +1214,22 @@
     bertha: { bg: '#7a6e5e', skin: '#f0c0a0', hair: '#d8d8d8', shirt: '#8a5a3a', hat: '#f6f0e0' },
     goggle: { imp: 'eye' }, lugs: { imp: 'ears' }, snoot: { imp: 'nose' }, lick: { imp: 'tongue' }, grabby: { imp: 'hands' }
   };
+  // Painted portraits (assets/portraits/<who>.png, 112x112) win over the code-drawn ones.
+  const PORT = {};
+  if (typeof Image !== 'undefined') Object.keys(P).forEach(w => { PORT[w] = new Image(); PORT[w].src = 'assets/portraits/' + w + '.png'; });
   function portrait(c, who) {
+    if (!P[who]) return false;
+    if (!PORT[who] && typeof Image !== 'undefined') { PORT[who] = new Image(); PORT[who].src = 'assets/portraits/' + who + '.png'; }
+    const im = PORT[who], k = c.canvas ? c.canvas.width / 56 : 1;
+    c.save(); c.scale(k, k);
+    if (im && im.complete && im.naturalWidth) {
+      const bg = P[who].bg || '#1aa0b8';
+      bands(c, 0, 0, 56, 56, [shade(bg, 10), bg, shade(bg, -14), shade(bg, -28)]);
+      c.imageSmoothingEnabled = true; c.drawImage(im, 0, 0, 56, 56);
+    } else portraitCode(c, who);
+    c.restore(); return true;
+  }
+  function portraitCode(c, who) {
     const o = P[who]; if (!o) return false;
     if (o.imp) {
       bands(c, 0, 0, 56, 56, ['#1aa0b8', '#22acc0', '#40c4c8']);

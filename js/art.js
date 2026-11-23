@@ -82,7 +82,7 @@
   }
   // Painted sprites (assets/sprites/*.png, cut from AI-painted sheets) replace the pixel figures when loaded.
   const SPR = {};
-  ['rowan_0', 'rowan_1', 'rowan_2', 'rowan_3', 'bram', 'nell', 'hester', 'marla'].forEach(n => { if (typeof Image === 'undefined') return; const im = new Image(); im.src = 'assets/sprites/' + n + '.png'; SPR[n] = im; });
+  ['rowan_0', 'rowan_1', 'rowan_2', 'rowan_3', 'bram', 'nell', 'hester', 'marla', 'fennick', 'oracle', 'pim', 'fishmonger', 'baker', 'guard', 'bertha', 'orla', 'varrick', 'elowen_veil', 'elowen', 'weft', 'goat', 'chick', 'anvil', 'hound', 'hound_sleep', 'octopus', 'crab', 'raven'].forEach(n => { if (typeof Image === 'undefined') return; const im = new Image(); im.src = 'assets/sprites/' + n + '.png'; SPR[n] = im; });
   const sprReady = n => SPR[n] && SPR[n].complete && SPR[n].naturalWidth > 0;
   function drawSprite(c, im, x, y, H, mirror) {
     const W = im.naturalWidth * H / im.naturalHeight, X = Math.round(x), Y = Math.round(y);
@@ -91,6 +91,7 @@
     if (mirror) { c.translate(X, 0); c.scale(-1, 1); c.drawImage(im, -W / 2, Y - H, W, H); } else c.drawImage(im, X - W / 2, Y - H, W, H);
     c.restore();
   }
+  const creature = (c, n, x, y, H, mirror) => { if (!sprReady(n)) return false; drawSprite(c, SPR[n], x, y, H, mirror); return true; };
   function figure(c, x, y, o, frame = 0, dir = 1) {
     const H = Math.max(14, Math.round((o.h || 34) * 1.18)), f = frame % 4;
     if (o.sprite && sprReady(o.sprite)) return drawSprite(c, SPR[o.sprite], x, y, H * 1.08, dir < 0);
@@ -344,8 +345,8 @@
       const tail = Math.sin(t * 2) * 2; ell(c, '#3a3a3a', 186, 88, 5, 3); circ(c, '#3a3a3a', 191, 85, 2.6); poly(c, '#3a3a3a', [189.5, 83, 190, 80, 191.5, 83]); poly(c, '#3a3a3a', [191.5, 83, 192.5, 80, 193, 83.5]); c.strokeStyle = '#3a3a3a'; c.beginPath(); c.moveTo(181, 88); c.quadraticCurveTo(177, 92 + tail, 179, 96); c.stroke();
     },
     actors: s => [
-      { y: 160, d: c => figure(c, 268, 160, { skin: '#dba882', hair: '#2a1d12', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, 1) },
-      { y: 160, d: c => figure(c, 304, 160, { skin: '#b9845e', hair: '#1a120c', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, -1) },
+      { y: 160, d: c => figure(c, 268, 160, { sprite: 'guard', skin: '#dba882', hair: '#2a1d12', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, 1) },
+      { y: 160, d: c => figure(c, 304, 160, { sprite: 'guard', skin: '#b9845e', hair: '#1a120c', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, -1) },
       { y: 159, d: c => { R(c, '#5a4a30', 280, 92, 1, 68); poly(c, '#cfd6d8', [279, 92, 280.5, 84, 282, 92]); R(c, '#5a4a30', 316, 92, 1, 68); poly(c, '#cfd6d8', [315, 92, 316.5, 84, 318, 92]); } }
     ],
     post(c, s, t) { R(c, 'rgba(30,20,10,.0)', 0, 0, 0, 0); }
@@ -470,7 +471,7 @@
       // candles
       [[96, 150], [224, 150], [84, 156], [236, 156]].forEach(([x, y]) => { R(c, '#e8e0cc', x, y - 8, 3, 8); poly(c, '#ffb040', [x - 1, y - 8, x + 4, y - 8, x + 1.5, y - 13 + Math.sin(t * 9 + x)]); circ(c, 'rgba(255,180,80,.15)', x + 1, y - 10, 8); });
     },
-    actors: () => [{ y: 113, d: c => figure(c, 160, 113, { skin: '#c8a090', hair: '#e8e8f0', longHair: true, top: '#5a3a7a', robe: '#4a2e6a', trim: '#e2b23a', legs: '#4a2e6a', h: 28 }, 0, 1) }]
+    actors: () => [{ y: 113, d: c => figure(c, 160, 113, { sprite: 'oracle', skin: '#c8a090', hair: '#e8e8f0', longHair: true, top: '#5a3a7a', robe: '#4a2e6a', trim: '#e2b23a', legs: '#4a2e6a', h: 28 }, 0, 1) }]
   };
 
   rooms.tunnel = {
@@ -514,7 +515,7 @@
       R(c, '#5a3a22', 226, 146, 22, 4); R(c, '#4a2c18', 228, 150, 3, 12); R(c, '#4a2c18', 244, 150, 3, 12); R(c, '#8a8a8a', 254, 156, 5, 6);
     },
     actors: (s, t) => [{ y: 160, d: c => {
-      figure(c, 281, 160, { skin: '#dba882', hair: '#4a2c18', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', h: 30 }, 0, -1);
+      figure(c, 281, 160, { sprite: 'guard', skin: '#dba882', hair: '#4a2c18', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', h: 30 }, 0, -1);
       if (!s.flags.got_keys) { c.strokeStyle = '#a8a8a8'; c.lineWidth = 1.5; c.beginPath(); c.arc(284, 145, 3.5, 0, 7); c.stroke(); R(c, '#c99a22', 283, 147, 1.5, 5); R(c, '#1a1a22', 286, 147, 1.5, 5); }
       c.fillStyle = '#e8e8f0'; c.font = '8px monospace'; const z = (t * 0.8) % 1; c.globalAlpha = 1 - z; c.fillText('z', 246 + z * 6, 124 - z * 14); c.fillText('Z', 252 + z * 8, 116 - z * 14); c.globalAlpha = 1;
     } }]
@@ -547,8 +548,8 @@
     },
     actors: s => [
       { y: 152, d: c => { figure(c, 139, 152, VARRICK, 0, 1); circ(c, '#120818', 139, 126, 1.8); circ(c, 'rgba(120,60,160,.5)', 139, 126, 3); } },
-      { y: 152, d: c => figure(c, 179, 152, { skin: '#f0c8a8', hair: '#c8862e', longHair: true, top: '#3fae8f', dress: '#3fae8f', trim: '#e2b23a', legs: '#3fae8f', veil: !s.flags.trust, hat: r => { r('#e2b23a', -2.5, 28.5, 5, 1.2); } }, 0, -1) },
-      { y: 162, d: c => figure(c, 240, 162, { skin: '#d8a888', hair: '#9a9a9a', top: '#2f6b5a', armor: '#b8c4c6', legs: '#4a4a52', cape: '#2f8a7a' }, 0, -1) }
+      { y: 152, d: c => figure(c, 179, 152, { sprite: s.flags.trust ? 'elowen' : 'elowen_veil', skin: '#f0c8a8', hair: '#c8862e', longHair: true, top: '#3fae8f', dress: '#3fae8f', trim: '#e2b23a', legs: '#3fae8f', veil: !s.flags.trust, hat: r => { r('#e2b23a', -2.5, 28.5, 5, 1.2); } }, 0, -1) },
+      { y: 162, d: c => figure(c, 240, 162, { sprite: 'orla', skin: '#d8a888', hair: '#9a9a9a', top: '#2f6b5a', armor: '#b8c4c6', legs: '#4a4a52', cape: '#2f8a7a' }, 0, -1) }
     ]
   };
 
@@ -648,8 +649,8 @@
   function rock(c, pts, base = '#7a7468') { litPoly(c, pts, shade(base, 18), shade(base, -50), 'rock', 0.45, 0.6); }
 
   // ---------- people used in several places ----------
-  const VARRICK = { skin: '#d8c0a8', hair: '#111', top: '#1a1a22', legs: '#111', cape: '#3a1020', h: 38, beard: '#111' };
-  const ELOWEN = { skin: '#f0c8a8', hair: '#c8862e', longHair: true, top: '#3fae8f', dress: '#3fae8f', trim: '#e2b23a', legs: '#3fae8f', hat: r => { r('#e2b23a', -2.5, 28.5, 5, 1.2); } };
+  const VARRICK = { sprite: 'varrick', skin: '#d8c0a8', hair: '#111', top: '#1a1a22', legs: '#111', cape: '#3a1020', h: 38, beard: '#111' };
+  const ELOWEN = { sprite: 'elowen', skin: '#f0c8a8', hair: '#c8862e', longHair: true, top: '#3fae8f', dress: '#3fae8f', trim: '#e2b23a', legs: '#3fae8f', hat: r => { r('#e2b23a', -2.5, 28.5, 5, 1.2); } };
   const gear = (c, x, y, r, teeth, ang, col, hub) => {
     c.save(); c.translate(x, y);
     ell(c, 'rgba(0,0,0,.3)', 2, 3, r * 1.15, r * 1.15);
@@ -726,8 +727,8 @@
       for (let i = 0; i < 14; i++) { const fy = run ? (110 + ((t * 20 + i * 7) % 40)) : 112 + (i * 5 % 22); R(c, '#f6f0e0', 84 + (i * 7 % 22), fy, 1, 1); }
     },
     actors: s => [
-      { y: 156, d: c => figure(c, 92, 156, { skin: '#e8b48a', hair: '#5a3a22', top: '#e8e0cc', dress: '#c86a3a', legs: '#c86a3a', hat: r => { r('#f6f0e0', -3, 28, 6, 3); } }, s.flags.clock ? Math.floor(Date.now() / 300) % 2 : 0, 1) },
-      { y: 152, d: c => figure(c, 200, 152, { skin: '#d8a080', hair: '#2a1d12', top: '#4a6a8a', legs: '#3a3a44', beard: '#2a1d12' }, 0, -1) }
+      { y: 156, d: c => figure(c, 92, 156, { sprite: 'baker', skin: '#e8b48a', hair: '#5a3a22', top: '#e8e0cc', dress: '#c86a3a', legs: '#c86a3a', hat: r => { r('#f6f0e0', -3, 28, 6, 3); } }, s.flags.clock ? Math.floor(Date.now() / 300) % 2 : 0, 1) },
+      { y: 152, d: c => figure(c, 200, 152, { sprite: 'fishmonger', skin: '#d8a080', hair: '#2a1d12', top: '#4a6a8a', legs: '#3a3a44', beard: '#2a1d12' }, 0, -1) }
     ]
   };
 
@@ -756,7 +757,7 @@
       R(c, '#2e1c10', 304, 100, 16, 64); R(c, 'rgba(255,150,60,.5)', 308, 104, 12, 60);
       planks(c, 0, 160, 320, 40, '#6a4a30', '#45301e');
     },
-    actors: () => [{ y: 168, d: c => figure(c, 200, 168, { h: 22, skin: '#e8b48a', hair: '#e8e8e8', beard: '#f0f0f0', top: '#8c1d26', legs: '#3a3a6a', hat: r => { r('#3a3a3a', -3, 25.5, 6, 1.6); r('#9fe0ff', -2.5, 25.6, 2, 1.4); r('#9fe0ff', 0.5, 25.6, 2, 1.4); } }, 0, -1) }]
+    actors: () => [{ y: 168, d: c => figure(c, 200, 168, { sprite: 'pim', h: 22, skin: '#e8b48a', hair: '#e8e8e8', beard: '#f0f0f0', top: '#8c1d26', legs: '#3a3a6a', hat: r => { r('#3a3a3a', -3, 25.5, 6, 1.6); r('#9fe0ff', -2.5, 25.6, 2, 1.4); r('#9fe0ff', 0.5, 25.6, 2, 1.4); } }, 0, -1) }]
   };
 
   rooms.clocktower = {
@@ -828,6 +829,7 @@
     actors: s => [
       { y: 140, d: c => {
         const fed = s.flags.fed, bob = fed ? Math.sin(Date.now() / 900) : Math.sin(Date.now() / 120) * 2;
+        if (creature(c, 'chick', 236, 100 + bob, 36)) return;
         c.save(); c.translate(13, -20); circ(c, '#e8d8b0', 213, 112 + bob, 15); circ(c, '#f6ecd0', 209, 108 + bob, 8);
         circ(c, '#111', 208, 106 + bob, 1.6); circ(c, '#111', 218, 106 + bob, 1.6);
         if (fed) { R(c, '#111', 206, 106 + bob, 4, 1); R(c, '#111', 216, 106 + bob, 4, 1); poly(c, '#e2a23a', [210, 112 + bob, 216, 112 + bob, 213, 115 + bob]); }
@@ -923,7 +925,7 @@
         const p = 0.6 + Math.sin(t * 6) * 0.3; circ(c, `rgba(140,60,200,${0.35 * p})`, 212, 133, 9); circ(c, '#200a30', 212, 134, 2);
         c.strokeStyle = `rgba(190,120,255,${p})`; c.lineWidth = 1; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(206, 126); let x = 206, y = 126; for (let k = 0; k < 5; k++) { x += -4 + Math.sin(t * 20 + k + i) * 4; y -= 4; c.lineTo(x, y); } c.stroke(); } c.restore();
       } });
-      else list.push({ y: 180, d: c => { c.save(); c.translate(26, 0); ell(c, '#c8402e', 208, 178, 6, 3.5); R(c, '#a83020', 201, 176, 2, 2); R(c, '#a83020', 213, 176, 2, 2); circ(c, '#c8402e', 200, 174, 2); circ(c, '#c8402e', 216, 174, 2); R(c, '#111', 206, 175, 1, 1); R(c, '#111', 210, 175, 1, 1); c.restore(); } });
+      else list.push({ y: 180, d: c => { if (creature(c, 'crab', 234 + Math.sin(Date.now() / 300) * 3, 184, 13)) return; c.save(); c.translate(26, 0); ell(c, '#c8402e', 208, 178, 6, 3.5); R(c, '#a83020', 201, 176, 2, 2); R(c, '#a83020', 213, 176, 2, 2); circ(c, '#c8402e', 200, 174, 2); circ(c, '#c8402e', 216, 174, 2); R(c, '#111', 206, 175, 1, 1); R(c, '#111', 210, 175, 1, 1); c.restore(); } });
       list.push({ y: 160, d: c => {
         c.save(); c.translate(23, 2); figure(c, 261, 160, ELOWEN, 0, -1);
         if (!s.flags.beaten) { c.strokeStyle = `rgba(120,60,180,${0.6 + Math.sin(t * 8) * 0.2})`; c.lineWidth = 1; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(250 + i * 4, 160); c.lineTo(250 + i * 4 + Math.sin(t * 9 + i), 124); c.stroke(); } R(c, 'rgba(60,20,90,.25)', 248, 124, 26, 36); }
@@ -956,7 +958,7 @@
     },
     actors: () => [
       { y: 120, d: c => { c.save(); c.beginPath(); c.rect(0, 0, 320, 120); c.clip(); figure(c, 252, 146, { sprite: 'marla', h: 40, skin: '#e3b08c', hair: '#8a3a1a', longHair: true, top: '#7a2a2a', sleeve: '#e8e0cc', legs: '#333' }, 0, -1); c.restore(); } },
-      { y: 168, d: c => { figure(c, 64, 168, { h: 32, skin: '#f0c8a8', hair: '#c8a040', top: '#3a6a3a', legs: '#5a3a22', hat: r => { r('#8c1d26', -3.5, 27, 7, 2.5); r('#e2b23a', 2, 29, 1, 5); } }, 0, 1); ell(c, '#b8742a', 72, 152, 6, 4.5); R(c, '#8a5a2a', 74, 140, 2, 12); R(c, '#2a1a10', 70, 151, 3, 2); } }
+      { y: 168, d: c => { if (sprReady('fennick')) { figure(c, 64, 168, { sprite: 'fennick', h: 34 }, 0, 1); return; } figure(c, 64, 168, { h: 32, skin: '#f0c8a8', hair: '#c8a040', top: '#3a6a3a', legs: '#5a3a22', hat: r => { r('#8c1d26', -3.5, 27, 7, 2.5); r('#e2b23a', 2, 29, 1, 5); } }, 0, 1); ell(c, '#b8742a', 72, 152, 6, 4.5); R(c, '#8a5a2a', 74, 140, 2, 12); R(c, '#2a1a10', 70, 151, 3, 2); } }
     ]
   };
 
@@ -983,6 +985,7 @@
       R(c, '#e8e0f0', 318, 140, 2, 50);
     },
     actors: (s, t) => [{ y: 92, d: c => {
+      if (creature(c, 'weft', 160, 90 + Math.sin(t * 1.4) * 1.5, 40)) return;
       const bob = Math.sin(t * 1.4) * 1.5, x = 160, y = 62 + bob;
       c.strokeStyle = '#120c1e'; c.lineWidth = 2;
       for (let i = 0; i < 4; i++) { const k = Math.sin(t * 2 + i) * 1.5; c.beginPath(); c.moveTo(x - 4, y + i * 3); c.lineTo(x - 14, y - 4 + i * 4 + k); c.lineTo(x - 18, y + 4 + i * 5); c.stroke(); c.beginPath(); c.moveTo(x + 4, y + i * 3); c.lineTo(x + 14, y - 4 + i * 4 - k); c.lineTo(x + 18, y + 4 + i * 5); c.stroke(); }
@@ -1012,6 +1015,7 @@
     },
     actors: (s, t) => [{ y: 162, d: c => {
       const run = s.flags.clock, pump = run ? Math.sin(t * 3) * 3 : 0, x = 215, y = 158;
+      if (creature(c, 'anvil', x, y + (run ? Math.abs(pump) * 0.3 : 0), 54)) return;
       R(c, '#8a6a2a', x - 9, y - 18, 6, 18); R(c, '#8a6a2a', x + 3, y - 18, 6, 18);
       R(c, '#c99a22', x - 13, y - 46, 26, 28); R(c, '#e2b23a', x - 13, y - 46, 26, 3); circ(c, run ? '#ff9a3a' : '#5a4a2a', x, y - 32, 5);
       R(c, '#b88a2a', x - 19, y - 44 + pump, 6, 20); R(c, '#b88a2a', x + 13, y - 44 - pump, 6, 20);
@@ -1038,6 +1042,7 @@
     },
     actors: (s, t) => [{ y: s.flags.goat ? 126 : 150, d: c => {
       const P = window.Art && window.Art.hasPainting && window.Art.hasPainting('ledge'), gx = s.flags.goat ? (P ? 205 : 214) : 204, gy = s.flags.goat ? (P ? 104 : 124) : (P ? 148 : 174), chew = Math.sin(t * 6) > 0 ? 1 : 0;
+      if (creature(c, 'goat', gx, gy, 34, true)) return;
       ell(c, '#f0ece0', gx, gy - 12, 14, 8);
       R(c, '#e0dccc', gx - 11, gy - 6, 3, 8); R(c, '#e0dccc', gx - 4, gy - 6, 3, 8); R(c, '#e0dccc', gx + 4, gy - 6, 3, 8); R(c, '#e0dccc', gx + 10, gy - 6, 3, 8);
       ell(c, '#f0ece0', gx - 15, gy - 20, 6, 5); R(c, '#e0dccc', gx - 20, gy - 18 + chew, 6, 4);
@@ -1066,6 +1071,7 @@
       [[250, 186], [276, 176], [140, 190]].forEach(([x, y]) => poly(c, '#ff9aa8', [x, y, x + 3, y - 6, x + 6, y]));
     },
     actors: (s, t) => s.flags.octo ? [] : [{ y: 182, d: c => {
+      if (creature(c, 'octopus', 210, 184 + Math.sin(t * 3), 14)) return;
       const w = Math.sin(t * 3); c.save(); c.translate(46, 0);
       ell(c, '#a86ac8', 164, 174, 7, 6); circ(c, '#fff', 161, 172, 1.6); circ(c, '#fff', 167, 172, 1.6); R(c, '#111', 161, 172, 1, 1); R(c, '#111', 167, 172, 1, 1);
       c.strokeStyle = '#a86ac8'; c.lineWidth = 2; for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(158 + i * 3, 178); c.quadraticCurveTo(156 + i * 3 + w * 2, 183, 154 + i * 4, 182 + (i % 2) * 2); c.stroke(); } c.restore();
@@ -1093,6 +1099,7 @@
     },
     actors: (s, t) => [{ y: 176, d: c => {
       const asleep = s.flags.hound, x = 152, y = 176, br = asleep ? Math.sin(t * 1.5) * 1 : 0;
+      if (creature(c, asleep ? 'hound_sleep' : 'hound', x, y + 2, asleep ? 24 : 34, false)) { if (asleep) { c.fillStyle = '#e8e8f0'; c.font = '8px monospace'; const z = (t * 0.6) % 1; c.globalAlpha = 1 - z; c.fillText('z', x + 6 + z * 4, y - 22 - z * 12); c.fillText('Z', x + 12 + z * 6, y - 30 - z * 12); c.globalAlpha = 1; } return; }
       ell(c, '#1a1a1e', x, y - 7 - br * 0.5, 22, 8 + br);
       ell(c, '#222226', x - 20, y - (asleep ? 6 : 14), 8, 6); poly(c, '#222226', [x - 24, y - (asleep ? 6 : 14), x - 34, y - (asleep ? 4 : 11), x - 24, y - (asleep ? 2 : 9)]);
       poly(c, '#1a1a1e', [x - 18, y - (asleep ? 11 : 19), x - 15, y - (asleep ? 17 : 25), x - 13, y - (asleep ? 11 : 19)]);
@@ -1121,7 +1128,7 @@
       castleFloor(c);
       R(c, '#110f0d', 0, 130, 16, 70);
     },
-    actors: () => [{ y: 170, d: c => figure(c, 220, 170, { h: 33, skin: '#f0c0a0', hair: '#d8d8d8', top: '#e8e0cc', dress: '#8a5a3a', trim: '#e8e0cc', legs: '#8a5a3a', hat: r => { r('#f6f0e0', -3.5, 27.5, 7, 3); } }, 0, -1) }]
+    actors: () => [{ y: 170, d: c => figure(c, 220, 170, { sprite: 'bertha', h: 33, skin: '#f0c0a0', hair: '#d8d8d8', top: '#e8e0cc', dress: '#8a5a3a', trim: '#e8e0cc', legs: '#8a5a3a', hat: r => { r('#f6f0e0', -3.5, 27.5, 7, 3); } }, 0, -1) }]
   };
 
   rooms.study = {
@@ -1173,8 +1180,8 @@
       R(c, '#e8d8a8', 0, 120, 14, 40);
     },
     actors: () => [
-      { y: 140, d: c => figure(c, 206, 140, { skin: '#dba882', hair: '#2a1d12', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, 1) },
-      { y: 142, d: c => figure(c, 294, 142, { skin: '#b9845e', hair: '#1a120c', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, -1) }
+      { y: 140, d: c => figure(c, 206, 140, { sprite: 'guard', skin: '#dba882', hair: '#2a1d12', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, 1) },
+      { y: 142, d: c => figure(c, 294, 142, { sprite: 'guard', skin: '#b9845e', hair: '#1a120c', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, -1) }
     ]
   };
 
@@ -1334,5 +1341,5 @@
     letter: c => { R(c, '#f4ead2', 3, 5, 18, 14); poly(c, '#d8ccb0', [3, 5, 12, 13, 21, 5]); circ(c, '#8c1d26', 12, 13, 3); }
   };
 
-  root.Art = { rooms, player, items, figure, portrait, chart, MAP_SPOTS, cine, vignette, flame };
+  root.Art = { rooms, player, items, figure, portrait, chart, MAP_SPOTS, cine, vignette, flame, creature };
 })(this);

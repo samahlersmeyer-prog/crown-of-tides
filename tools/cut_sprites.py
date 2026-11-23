@@ -37,6 +37,12 @@ for x, v in enumerate(colsum + [0]):
     elif v <= 2 and inside:
         inside = False
         if x - start > w * 0.03: segs.append((start, x))
+while len(segs) < len(names):
+    # two figures touching: split the widest blob at its thinnest column
+    i = max(range(len(segs)), key=lambda k: segs[k][1] - segs[k][0]); x0, x1 = segs[i]
+    lo, hi = x0 + (x1 - x0) // 4, x1 - (x1 - x0) // 4
+    cut = min(range(lo, hi), key=lambda x: colsum[x])
+    segs[i:i + 1] = [(x0, cut), (cut, x1)]
 if len(segs) != len(names):
     print('found', len(segs), 'figures, expected', len(names), segs); sys.exit(1)
 boxes = []

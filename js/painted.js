@@ -42,7 +42,7 @@
     aerie: { over(c, s, t) { if (!s.inv.includes('feather')) { sparkle(c, 272, 88, t); glow(c, 270, 88, 10, '255,220,100', 0.4); } } },
     tidepools: { over(c, s, t) { if (!s.flags.got_glass) { sparkle(c, 108, 186, t); ell(c, '#6ad0a0', 108, 187, 3, 1.6); } } },
     cellar: { over(c, s, t) { if (s.flags.coin_found) R(c, '#120e0a', 190, 70, 14, 9); } },
-    study: { over(c, s, t) { const hop = Math.sin(t * 2) > 0.9 ? -2 : 0; ell(c, '#0e0e14', 70, 58 + hop, 6, 8); circ(c, '#0e0e14', 72, 49 + hop, 4.5); c.fillStyle = '#3a3a40'; c.beginPath(); c.moveTo(76, 49 + hop); c.lineTo(81, 51 + hop); c.lineTo(76, 52 + hop); c.fill(); R(c, '#e8e8f0', 73, 47 + hop, 1, 1); } },
+    study: { over(c, s, t) { if (A.creature(c, 'raven', 70, 66 + (Math.sin(t * 2) > 0.9 ? -2 : 0), 20, true)) return; const hop = Math.sin(t * 2) > 0.9 ? -2 : 0; ell(c, '#0e0e14', 70, 58 + hop, 6, 8); circ(c, '#0e0e14', 72, 49 + hop, 4.5); c.fillStyle = '#3a3a40'; c.beginPath(); c.moveTo(76, 49 + hop); c.lineTo(81, 51 + hop); c.lineTo(76, 52 + hop); c.fill(); R(c, '#e8e8f0', 73, 47 + hop, 1, 1); } },
     tower: { over(c, s, t) { if (s.won === 'long') { const g = c.createLinearGradient(0, 0, 0, 200); g.addColorStop(0, 'rgba(255,210,130,.35)'); g.addColorStop(1, 'rgba(255,190,120,.12)'); c.fillStyle = g; c.fillRect(0, 0, 320, 200); } else if (Math.sin(t * 1.7) > 0.97) c.fillStyle = 'rgba(220,230,255,.18)', c.fillRect(0, 0, 320, 200); } }
   };
 

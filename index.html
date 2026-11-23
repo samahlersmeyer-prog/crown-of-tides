@@ -81,25 +81,34 @@
       <div class="btns"><button data-close>Cancel</button></div>
     </section>
 
-    <section id="menu" class="panel" hidden aria-label="Menu">
-      <h2>Menu</h2>
-      <div class="btns col">
-        <button id="m-save">Save game</button>
-        <button id="m-restore">Restore game</button>
-        <button id="m-restart">Restart</button>
-        <button id="m-hints">Hint book</button>
+    <section id="menu" class="panel control" hidden aria-label="Control panel">
+      <h2>Control Panel</h2>
+      <div class="cp">
+        <div class="btns col cp-btns">
+          <button id="m-save">Save</button>
+          <button id="m-restore">Restore</button>
+          <button id="m-restart">Restart</button>
+          <button id="m-hints">Hint book</button>
+          <button id="m-about">About</button>
+          <button data-close>Play</button>
+        </div>
+        <div class="cp-sliders">
+          <label class="slider"><input id="m-vol" type="range" min="0" max="10" step="1"><span>Volume</span></label>
+          <label class="slider"><input id="m-spd" type="range" min="1" max="5" step="1"><span>Speed</span></label>
+        </div>
+      </div>
+      <div class="btns cp-toggles">
+        <button id="m-talk">Dialogue: Text &amp; Speech</button>
         <button id="m-music">Music: On</button>
         <button id="m-sound">Sound: On</button>
-        <button id="m-speed">Speed: Normal</button>
-        <button id="m-about">About</button>
-        <button data-close>Resume</button>
+        <button id="m-bar" class="mouse-only">Icon bar: Drops down</button>
       </div>
     </section>
 
     <section id="about" class="panel" hidden aria-label="About">
       <h2>About</h2>
       <p class="prose">An original fan-made adventure in the spirit of the classic Sierra quests of the early '90s. Five islands, 231 points, two endings. Point, click, and try everything. Dying is part of the fun, and you can always try again.</p>
-      <p class="prose small">With a mouse: move to the top of the screen for the icon bar, and right-click to cycle actions.</p>
+      <p class="prose small">With a mouse: move to the top of the screen for the icon bar (or pin it in the Control Panel), and right-click to cycle actions. Pick Help, then any icon, to learn what it does.</p>
       <p class="prose small">Story, art, and code are original. Not affiliated with Sierra or any King's Quest rights holder.</p>
       <div class="btns"><button data-close>Close</button></div>
     </section>
@@ -130,7 +139,8 @@
     <button data-verb="item" id="btn-item" title="Use an item"><canvas id="item-icon" width="24" height="24"></canvas><span>Item</span></button>
     <button id="btn-map" title="Magic map" hidden><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span>Map</span></button>
     <button id="btn-inv" title="Inventory"><svg viewBox="0 0 24 24"><path d="M5 9h14l-1 11H6z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/><path d="M10 13h4"/></svg><span>Bag</span></button>
-    <button id="btn-menu" title="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></button>
+    <button id="btn-menu" title="Control panel"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg><span>Controls</span></button>
+    <button id="btn-help" title="What does this do?"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1 4.5 2.6c-.9.5-1.5 1.3-1.5 2.4v.5"/><path d="M12 18.5v.5"/></svg><span>Help</span></button>
   </nav>
   </div>
 </main>

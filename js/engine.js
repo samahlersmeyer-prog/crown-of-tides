@@ -18,8 +18,13 @@
   let scene = null;          // cinematic painter while the intro plays
   let fade = 0;
   const pref = (k, d) => { const v = localStorage.getItem('cot_' + k); return v === null ? d : v === 'on'; };
-  let soundOn = pref('sound', true), fast = pref('fast', false);
-  M.setOn(pref('music', true));
+  const num = (k, d) => { const v = parseInt(localStorage.getItem('cot_' + k), 10); return isNaN(v) ? d : v; };
+  let soundOn = pref('sound', true);
+  let volume = num('vol', 7), speed = num('speed', pref('fast', false) ? 5 : 3);
+  let talkMode = localStorage.getItem('cot_talk') || 'both';   // text | both | speech, like the CD versions
+  let pinned = pref('pinned', false);
+  M.setOn(pref('music', true)); M.setVolume(volume / 10);
+  document.body.classList.toggle('pinned', pinned);
 
   // ---------- sound effects ----------
   let ac = null;
@@ -29,7 +34,7 @@
       ac = ac || new (window.AudioContext || window.webkitAudioContext)();
       notes.forEach((f, i) => {
         const o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime + i * len;
-        o.type = type; o.frequency.value = f; g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len * 0.95);
+        o.type = type; o.frequency.value = f; g.gain.setValueAtTime(Math.max(0.0002, vol * volume / 7), t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len * 0.95);
         o.connect(g).connect(ac.destination); o.start(t0); o.stop(t0 + len);
       });
     } catch (e) { /* audio is optional */ }
@@ -59,7 +64,34 @@
     if (!lines || !lines.length) { if (then) then(); return; }
     queue = lines.slice(); afterMsgs = then || null; nextMsg();
   }
+  // ---------- spoken dialogue (browser speech, one voice per character) ----------
+  const VOICE = {
+    narrator: ['m', 0.95, 0.98], rowan: ['m', 1.1, 1.02], bram: ['m', 0.75, 0.9], nell: ['f', 0.8, 0.9], oracle: ['f', 0.6, 0.78],
+    pim: ['m', 1.5, 1.15], hester: ['f', 0.85, 0.92], fishmonger: ['m', 0.6, 0.95], guard: ['m', 0.7, 1], granite: ['m', 0.2, 0.75],
+    basalt: ['m', 0.35, 0.85], nerissa: ['f', 1.05, 0.9], elowen: ['f', 1.2, 1], orla: ['f', 0.8, 1], varrick: ['m', 0.5, 0.85],
+    king: ['m', 0.65, 0.85], marla: ['f', 1, 1.05], fennick: ['m', 1.3, 1.1], weft: ['f', 0.5, 0.8], anvil: ['m', 0.3, 0.9],
+    bertha: ['f', 0.9, 0.95], goggle: ['m', 1.9, 1.25], lugs: ['m', 1.7, 1.2], snoot: ['m', 1.6, 1.15], lick: ['f', 1.9, 1.25], grabby: ['m', 1.8, 1.3]
+  };
+  const FEMALE = /female|samantha|victoria|karen|zira|susan|fiona|moira|tessa|serena|kate|hazel|libby|sonia|aria|jenny/i;
+  const MALE = /\bmale|daniel|alex|david|mark|fred|george|rishi|arthur|oliver|guy|ryan|thomas|aaron/i;
+  const speech = window.speechSynthesis;
+  function pickVoice(g) {
+    const en = speech.getVoices().filter(v => /^en/i.test(v.lang));
+    return en.find(v => (g === 'f' ? FEMALE : MALE).test(v.name) && !(g === 'm' && FEMALE.test(v.name))) || en[0] || null;
+  }
+  function speak(who, text, done) {
+    if (!speech || talkMode === 'text' || volume === 0) return false;
+    speech.cancel();
+    const [g, pitch, rate] = VOICE[who] || VOICE.narrator;
+    const u = new SpeechSynthesisUtterance(text.replace(/\n+/g, ' '));
+    u.voice = pickVoice(g); u.pitch = pitch; u.rate = rate * (speed >= 4 ? 1.15 : 1); u.volume = volume / 10;
+    if (done) u.onend = done;
+    speech.speak(u); return true;
+  }
+  const hush = () => { if (speech) speech.cancel(); };
+
   function nextMsg() {
+    hush();
     if (!queue.length) { $('msg').hidden = true; busy = false; const f = afterMsgs; afterMsgs = null; if (f) f(); return; }
     busy = true;
     const line = queue.shift(), who = Array.isArray(line) ? line[0] : null, text = Array.isArray(line) ? line[1] : line;
@@ -70,6 +102,11 @@
     $('msg-who').hidden = !who;
     $('msg-text').textContent = who ? `“${text}”` : text;
     $('msg').hidden = false; $('msg').focus();
+    // Speech only: the voice carries the line and moves on by itself; the box still shows who is talking.
+    const solo = talkMode === 'speech';
+    const line0 = queue.length;
+    const spoke = speak(who || 'narrator', text, solo ? () => { if (!$('msg').hidden && queue.length === line0) setTimeout(() => { if (queue.length === line0 && !$('msg').hidden) nextMsg(); }, 350); } : null);
+    $('msg').classList.toggle('voice-only', solo && spoke);
   }
   $('msg').addEventListener('click', nextMsg);
 
@@ -191,8 +228,28 @@
 
   // ---------- icon bar + cursors ----------
   let barTimer = null;
-  function showBar() { if (!mouse) return; clearTimeout(barTimer); $('icons').classList.add('show'); }
-  function hideBar() { if (!mouse) return; clearTimeout(barTimer); barTimer = setTimeout(() => $('icons').classList.remove('show'), 350); }
+  function showBar() { if (!mouse || pinned) return; clearTimeout(barTimer); $('icons').classList.add('show'); }
+  function hideBar() { if (!mouse || pinned) return; clearTimeout(barTimer); barTimer = setTimeout(() => $('icons').classList.remove('show'), 350); }
+  const HELP = {
+    walk: 'Walk: click anywhere on the screen to walk there. Click a doorway or path to go through it.',
+    look: 'Look: click on anything to look at it. Click on empty ground to look around the whole scene.',
+    hand: 'Hand: pick things up, open doors, push, pull and generally get your hands dirty.',
+    talk: 'Talk: click on someone to talk to them. Talking to things that are not people is allowed, but rarely rewarding.',
+    item: 'Item: the thing you are holding. Click it on someone or something to use it there. Choose it from your bag first.',
+    'btn-map': 'Magic map: the sea chart. Open it anywhere outdoors to sail to another island.',
+    'btn-inv': 'Bag: everything you are carrying. Look at items, use them on each other, or choose one to use in the world.',
+    'btn-menu': 'Controls: save, restore, restart, hints, volume, walking speed, spoken dialogue and the icon bar.',
+    'btn-help': 'Help: pick this, then any icon, and you will be told what it does. Exactly like now.'
+  };
+  let helpMode = false;
+  const setHelp = on => { helpMode = on; document.body.classList.toggle('help-mode', on); };
+  $('icons').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || busy) return;
+    if (b.id === 'btn-help') { e.stopImmediatePropagation(); setHelp(!helpMode); return; }
+    if (!helpMode) return;
+    e.stopImmediatePropagation(); setHelp(false); $('icons').classList.remove('show');
+    showMsgs([HELP[b.dataset.verb || b.id] || b.title]);
+  }, true);
   $('icons').addEventListener('pointerenter', showBar);
   $('icons').addEventListener('pointerleave', hideBar);
 
@@ -319,11 +376,17 @@
   const toggleLabel = () => {
     $('m-sound').textContent = 'Sound: ' + (soundOn ? 'On' : 'Off');
     $('m-music').textContent = 'Music: ' + (M.on ? 'On' : 'Off');
-    $('m-speed').textContent = 'Speed: ' + (fast ? 'Fast' : 'Normal');
+    $('m-talk').textContent = 'Dialogue: ' + { text: 'Text only', both: 'Text & Speech', speech: 'Speech only' }[talkMode];
+    $('m-bar').textContent = 'Icon bar: ' + (pinned ? 'Always shown' : 'Drops down');
+    $('m-vol').value = volume; $('m-spd').value = speed;
   };
   $('m-sound').addEventListener('click', () => { soundOn = !soundOn; localStorage.setItem('cot_sound', soundOn ? 'on' : 'off'); toggleLabel(); });
   $('m-music').addEventListener('click', () => { M.setOn(!M.on); localStorage.setItem('cot_music', M.on ? 'on' : 'off'); if (M.on) M.start(themeFor()); toggleLabel(); });
-  $('m-speed').addEventListener('click', () => { fast = !fast; localStorage.setItem('cot_fast', fast ? 'on' : 'off'); toggleLabel(); });
+  $('m-talk').addEventListener('click', () => { talkMode = { text: 'both', both: 'speech', speech: 'text' }[talkMode]; localStorage.setItem('cot_talk', talkMode); toggleLabel(); if (talkMode !== 'text') speak('narrator', 'Very well.'); });
+  $('m-bar').addEventListener('click', () => { pinned = !pinned; localStorage.setItem('cot_pinned', pinned ? 'on' : 'off'); document.body.classList.toggle('pinned', pinned); $('icons').classList.remove('show'); toggleLabel(); });
+  $('m-vol').addEventListener('input', e => { volume = +e.target.value; localStorage.setItem('cot_vol', volume); M.setVolume(volume / 10); });
+  $('m-vol').addEventListener('change', () => { tone([523, 659], 'square', 0.08); speak('narrator', 'Volume ' + volume + '.'); });
+  $('m-spd').addEventListener('input', e => { speed = +e.target.value; localStorage.setItem('cot_speed', speed); });
   toggleLabel();
   $('m-about').addEventListener('click', () => openPanel('about'));
 
@@ -396,7 +459,7 @@
     else {
       if (walking) {
         const [tx, ty] = walking.pts[0], dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy);
-        const sp = (fast ? 120 : 70) * dt * scaleAt(s.y);
+        const sp = [40, 55, 70, 95, 130][speed - 1] * dt * scaleAt(s.y);
         if (Math.abs(dx) > 0.5) dir = dx > 0 ? 1 : -1;
         frameT += dt; if (frameT > 0.14) { frameT = 0; frame++; }
         if (d <= sp) {

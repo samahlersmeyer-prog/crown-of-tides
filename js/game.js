@@ -67,6 +67,15 @@
   // Award points once per key.
   const pts = (s, key, n) => { const k = 'pts_' + key; if (s.flags[k]) return; s.flags[k] = true; s.score += n; };
   const say = (...lines) => ({ say: lines });
+  // The open sea: walk into it and the tide takes you, like the old games.
+  const LAGOON_DEATH = 'You wade into the turquoise lagoon. Something large and toothy, which is not a Tide Warden, decides you are lunch.\n\nThe queen\'s lagoon keeps its own guards.';
+  const sea = (rect, death) => ({
+    id: 'sea', name: 'the sea', rect,
+    look: () => say('Endless blue water, all the way to the horizon.'),
+    hand: () => say('The water is cold, and very, very salty.'),
+    talk: () => say('You call out across the waves. The sea does not answer. It rarely does.'),
+    walk: () => ({ die: death || 'You wade into the surf for a refreshing swim. A riptide has other plans.\n\nIt carries you past the reef, past the horizon, and into the next chapter of somebody else\'s story.' })
+  });
   const once = (s, f, lines) => flag(s, f) ? null : (set(s, f), lines);
 
   // Boats: before the chart the ferry only knows two routes; after it, the chart opens the map.
@@ -219,6 +228,7 @@
         'Somewhere beyond these dunes is Elowen\'s castle. Time to find out whether she was worth a shipwreck.'
       ]),
       spots: [
+        sea([0, 88, 320, 34]),
         { id: 'west', name: 'path to the cliffs', rect: [0, 110, 16, 56], at: [18, 150], exit: { to: 'cliffs', x: 290, y: 168 } },
         { id: 'east', name: 'path to the village', rect: [304, 110, 16, 90], at: [290, 170], exit: { to: 'square', x: 26, y: 172 } },
         {
@@ -350,6 +360,7 @@
       name: 'Saltmarrow Docks', isle: 'crown', scale: [148, 0.85, 194, 1.04],
       walk: [20, 148, 300, 194],
       spots: [
+        sea([0, 78, 320, 62]),
         { id: 'west', name: 'road to the village', rect: [0, 140, 14, 60], at: [22, 170], exit: { to: 'square', x: 160, y: 186 } },
         { id: 'shore', name: 'path to the lighthouse', rect: [0, 194, 200, 6], at: [100, 192], exit: { to: 'lighthouse', x: 40, y: 176 } },
         {
@@ -459,6 +470,7 @@
       walk: [14, 150, 250, 194],
       enter: s => { pts(s, 'clocks', 2); return once(s, 'seen_clocks', ['A town of brass and copper, all gears and chimneys. Everyone in it is frozen in place: a baker mid-knead, a fishmonger mid-shout. Above it all, the great tower clock reads one minute to noon. It has, you suspect, for some time.']); },
       spots: [
+        sea([292, 118, 28, 30]),
         { id: 'boat', name: 'ferry boat', rect: [262, 90, 52, 68], at: [246, 168], look: () => say('Your boat, waiting in the harbor.'), hand: boatFrom('clocks'), walk: boatFrom('clocks') },
         { id: 'tower', name: 'clock tower', rect: [124, 104, 30, 46], at: [140, 156], exit: { to: 'clocktower', x: 160, y: 188 }, look: s => say(flag(s, 'clock') ? 'The great clock ticks happily along.' : 'The tower door stands ajar. The great clock above it is stuck at one minute to noon.') },
         { id: 'clockface', name: 'clock face', rect: [122, 24, 32, 32], look: s => say(flag(s, 'clock') ? 'Tick, tock. Time is moving again.' : 'Eleven fifty-nine. Forever, apparently.') },
@@ -541,6 +553,7 @@
       walk: [14, 150, 306, 194],
       enter: s => { delete s.flags.asked; return once(s, 'seen_sent', ['A single great spire of rock rises from the sea. Two stairways are cut into it, side by side, and at the foot of each stands a stone sentinel.', 'A plaque reads: "ONE OF US SPEAKS ONLY TRUTH. ONE OF US ONLY LIES. ONE STAIR IS SAFE. YOU MAY ASK ONE QUESTION."']); },
       spots: [
+        sea([0, 128, 320, 20]),
         { id: 'boat', name: 'boat', rect: [16, 120, 60, 28], at: [60, 156], look: () => say('Your boat, waiting at the rocks.'), hand: boatFrom('sentinels'), walk: boatFrom('sentinels') },
         { id: 'granite', name: 'Granite, the left sentinel', rect: [96, 72, 30, 70], at: [110, 160], look: () => say('A sentinel of grey granite with a stern stone face. It guards the left stair.'), talk: s => sentinelAsk(s, 'granite'), hand: () => say('It\'s rock. You\'re not.') },
         { id: 'basalt', name: 'Basalt, the right sentinel', rect: [198, 76, 28, 62], at: [212, 160], look: () => say('A sentinel of black basalt with a sly stone smile. It guards the right stair.'), talk: s => sentinelAsk(s, 'basalt'), hand: () => say('It\'s rock. You\'re not.') },
@@ -599,11 +612,13 @@
       block: [[14, 140, 90, 12]],
       enter: s => once(s, 'seen_reef', ['A beach of pink coral sand. Rocks curl out into a turquoise lagoon. It is beautiful, and completely deserted.', 'Then the sand erupts. Five knee-high creatures with fins for ears and seaweed for hair pop up in a line between you and the water.', ['goggle', 'HALT! We are the Tide Wardens! No land-folk may pass to the queen\'s lagoon!'], ['lugs', 'We\'d hear you!'], ['snoot', 'We\'d smell you!'], ['lick', 'We\'d taste you!'], ['grabby', 'We\'d FEEL you!'], 'Each one has one enormous feature: an eye, a pair of ears, a nose, a tongue, a pair of grabbing hands. Getting past all five is going to take some cunning.']),
       spots: [
+        sea([0, 115, 320, 28], LAGOON_DEATH),
         { id: 'west', name: 'path to the tide pools', rect: [0, 150, 14, 50], at: [16, 170], walk: s => wardensLeft(s) ? say(['goggle', 'Oh no you don\'t!'], 'The wardens link arms and block the path.') : { go: { to: 'tidepools', x: 294, y: 172 } } },
         ...WARDENS,
         { id: 'boat', name: 'boat', rect: [268, 50, 52, 92], at: [250, 160], look: () => say('Your boat, waiting in the shallows.'), hand: boatFrom('reef'), walk: boatFrom('reef') },
         {
           id: 'lagoon', name: 'lagoon', rect: [0, 70, 320, 45], at: [140, 150],
+          walk: () => ({ die: LAGOON_DEATH }),
           look: s => say(flag(s, 'summoned') ? 'The lagoon glitters around the mer-queen\'s rock.' : 'Clear turquoise water. Far below, you think you see towers made of coral.'),
           talk: s => flag(s, 'summoned') ? null : say(['rowan', 'Hello?'], 'The lagoon is unmoved. The guidebook said the mer-folk answer only to music.'),
           item: (s, i) => {
@@ -777,6 +792,7 @@
       walk: [14, 150, 306, 194],
       block: [[50, 140, 130, 46], [14, 134, 82, 18]],
       spots: [
+        sea([0, 86, 320, 60]),
         { id: 'east', name: 'back to the strand', rect: [306, 120, 14, 80], at: [304, 170], exit: { to: 'reef', x: 24, y: 172 } },
         {
           id: 'octopus', name: 'baby octopus', rect: [196, 166, 28, 18], at: [228, 180], gone: s => flag(s, 'octo'),

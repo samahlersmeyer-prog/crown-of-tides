@@ -74,7 +74,7 @@ body.mouse .mouse-only { display: block; }
 .inv-item.sel { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
 .inv-desc { max-width: 56ch; margin: 0; min-height: 2.8em; font-size: clamp(14px, 2.4vw, 18px); line-height: 1.35; }
 
-.icons.has-map { grid-template-columns: repeat(8, 1fr); }
+.icons.has-map { grid-template-columns: repeat(9, 1fr); }
 .icons button[hidden] { display: none; }
 .inv-verbs { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
 .inv-verbs button { background: #111a2e; border: 1px solid #2c3c5e; border-radius: 3px; padding: 6px 10px; min-height: 40px; cursor: pointer; font-size: clamp(13px, 2.2vw, 16px); color: #cdbf9f; }
@@ -85,7 +85,11 @@ body.mouse .mouse-only { display: block; }
 body.mouse .screen-wrap { overflow: hidden; }
 body.mouse .icons { position: absolute; top: 3px; left: 3px; right: 3px; z-index: 5; transform: translateY(-110%); transition: transform .18s cubic-bezier(.16,1,.3,1); box-shadow: 0 6px 16px rgba(0,0,0,.5); }
 body.mouse .icons.show { transform: none; }
-.icons { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 4px; background: linear-gradient(#24324f, #16213a); border: 2px solid var(--gold-dim); border-radius: 3px; }
+/* Pinned: the bar sits above the screen and never hides. */
+body.mouse.pinned .icons { position: static; order: -1; transform: none; transition: none; box-shadow: none; }
+body.help-mode #screen, body.help-mode .icons button { cursor: help; }
+body.help-mode #btn-help { background: #2a2414; border-color: var(--gold); color: var(--gold); }
+.icons { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; padding: 4px; background: linear-gradient(#24324f, #16213a); border: 2px solid var(--gold-dim); border-radius: 3px; }
 .icons button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; min-height: 52px; background: #111a2e; border: 1px solid #2c3c5e; border-radius: 3px; cursor: pointer; font-size: 12px; color: #cdbf9f; }
 .icons button:hover { border-color: var(--gold-dim); }
 .icons button[aria-pressed="true"] { background: #2a2414; border-color: var(--gold); color: var(--gold); }
@@ -106,3 +110,14 @@ body.mouse .icons.show { transform: none; }
   #mapcv { height: auto; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .msg { animation: none; } }
+
+/* Control panel, laid out like the old SCI one: buttons on the left, sliders on the right. */
+.cp { display: flex; gap: clamp(16px, 4vw, 40px); align-items: stretch; justify-content: center; }
+.cp-btns { min-width: 160px; }
+.cp-sliders { display: flex; gap: clamp(14px, 3vw, 28px); padding: 10px 16px; border: 2px solid var(--gold-dim); border-radius: 3px; background: #111a2e; }
+.slider { display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold); letter-spacing: .04em; }
+.slider input { writing-mode: vertical-lr; direction: rtl; flex: 1; min-height: 140px; width: 28px; accent-color: var(--gold); cursor: pointer; }
+.cp-toggles button { font-size: clamp(13px, 2.2vw, 16px); padding: 6px 12px; min-height: 40px; }
+@media (max-width: 520px) { .cp { flex-direction: column; align-items: center; } .slider input { min-height: 100px; } }
+.msg.voice-only p { display: none; }
+.msg.voice-only .msg-hint::before { content: '♪ '; }

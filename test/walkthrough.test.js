@@ -94,6 +94,9 @@ dies('cliffs', { door_open: true }, 'door', 'walk');
 dies('square', {}, 'fountain', 'hand');
 dies('mistshore', {}, 'wisp', 'walk');
 dies('cellar', {}, 'guard', 'talk');
+// Walking into the sea drowns you, as in the old games.
+for (const r of ['beach', 'docks', 'clockharbor', 'sentbase', 'reef', 'tidepools']) dies(r, {}, 'sea', 'walk');
+dies('reef', {}, 'lagoon', 'walk');
 dies('hall', {}, 'varrick', 'talk');
 dies('clocktower', { clock: true }, 'gear', 'hand');
 dies('aerie', {}, 'feathers', 'hand');

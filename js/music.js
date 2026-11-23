@@ -32,7 +32,7 @@
         if (n.f) {
           const o = ac.createOscillator(), g = ac.createGain();
           o.type = v.wave; o.frequency.value = n.f;
-          g.gain.setValueAtTime(v.vol, v.t); g.gain.exponentialRampToValueAtTime(0.0001, v.t + len * 0.92);
+          g.gain.setValueAtTime(Math.max(0.0002, v.vol * master), v.t); g.gain.exponentialRampToValueAtTime(0.0001, v.t + len * 0.92);
           o.connect(g).connect(ac.destination); o.start(v.t); o.stop(v.t + len);
         }
         v.t += len; v.i = (v.i + 1) % v.notes.length;
@@ -40,6 +40,8 @@
     }, 50);
   }
   function stop() { clearInterval(timer); timer = null; voices = []; }
+  let master = 0.7;
+  function setVolume(v) { master = v; }
   function setOn(v) { on = v; if (!v) { stop(); } else { const c = cur; cur = null; if (c) start(c); } }
-  root.Music = { start, stop, setOn, THEMES, get on() { return on; } };
+  root.Music = { start, stop, setOn, setVolume, THEMES, get on() { return on; } };
 })(this);

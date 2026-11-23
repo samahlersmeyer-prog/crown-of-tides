@@ -95,18 +95,30 @@ for (const liar of ['granite', 'basalt']) for (const safe of ['left', 'right']) 
 }
 
 // Deaths that must happen.
+const NO_WARNING = ['left', 'right'];
 const dies = (room, flags, spot, verb, item) => {
   const d = G.newState(); d.room = room; Object.assign(d.flags, flags);
   if (item) d.inv.push(item);
-  assert(G.act(d, spot, verb, item).die, `expected death: ${room}/${spot}/${verb}`);
+  // every death but the riddle stair warns once first
+  const first = G.act(d, spot, verb, item);
+  if (!NO_WARNING.includes(spot)) assert(first.say && !first.die, `expected a warning first: ${room}/${spot}/${verb}`);
+  assert((first.die ? first : G.act(d, spot, verb, item)).die, `expected death: ${room}/${spot}/${verb}`);
 };
-dies('cliffs', { door_open: true }, 'door', 'walk');
+// Walking into danger warns once, kills on the second try, and forgets the warning when you leave the room.
+const warnsThenDies = (room, flags, spot) => {
+  const d = G.newState(); d.room = room; Object.assign(d.flags, flags);
+  const first = G.act(d, spot, 'walk'); assert(first.say && !first.die, `expected a warning first: ${room}/${spot}`);
+  assert(G.act(d, spot, 'walk').die, `expected death on the second try: ${room}/${spot}`);
+  G.enter(d, { to: room, x: 160, y: 170 });
+  assert(!G.act(d, spot, 'walk').die, `warning should come back after leaving: ${room}/${spot}`);
+};
+warnsThenDies('cliffs', { door_open: true }, 'door');
 dies('square', {}, 'fountain', 'hand');
 dies('mistshore', {}, 'wisp', 'walk');
 dies('cellar', {}, 'guard', 'talk');
 // Walking into the sea drowns you, as in the old games.
-for (const r of ['beach', 'docks', 'clockharbor', 'sentbase', 'reef', 'tidepools']) dies(r, {}, 'sea', 'walk');
-dies('reef', {}, 'lagoon', 'walk');
+for (const r of ['beach', 'docks', 'clockharbor', 'sentbase', 'reef', 'tidepools']) warnsThenDies(r, {}, 'sea');
+warnsThenDies('reef', {}, 'lagoon');
 dies('hall', {}, 'varrick', 'talk');
 dies('clocktower', { clock: true }, 'gear', 'hand');
 dies('aerie', {}, 'feathers', 'hand');
@@ -117,9 +129,9 @@ dies('mistwood', {}, 'web', 'hand');
 dies('reef', {}, 'lick', 'hand');
 dies('mistwood', {}, 'weft', 'hand');
 dies('ledge', {}, 'goat', 'hand');
-dies('corridor', {}, 'kitchen', 'walk');
+warnsThenDies('corridor', {}, 'kitchen');
 dies('corridor', {}, 'hound', 'hand');
-dies('gallery', {}, 'doors', 'walk');
+warnsThenDies('gallery', {}, 'doors');
 dies('gearworks', { clock: true }, 'forge', 'hand');
 
 // Every exit points at a real room; walk targets and arrivals sit inside walk boxes.
@@ -175,7 +187,8 @@ for (const s0 of [fresh(), (() => { const z = fresh(); toTower(z); return z; })(
 
 // Every death in the source has exactly one album title, and every title is used.
 { const src = require('fs').readFileSync(__dirname + '/../js/game.js', 'utf8'), used = new Set();
-  const texts = src.split('\n').filter(l => /die: (death \|\| )?'|LAGOON_DEATH = '/.test(l)).map(l => l.slice(l.search(/die: |LAGOON_DEATH = /)).replace(/\\'/g, "'"));
+  const texts = src.split('\n').filter(l => /die: '|brink\(s, '\w+', '|death \|\| '|LAGOON_DEATH = '/.test(l)).map(l => l.slice(l.search(/die: |brink\(|LAGOON_DEATH = /)).replace(/\\'/g, "'"));
+  assert.strictEqual(src.split('\n').filter(l => /\{ die: /.test(l)).length, 2, 'a death that does not warn first (only brink itself and the riddle stair may)');
   assert(texts.length >= 28, 'found only ' + texts.length + ' deaths');
   for (const x of texts) { const hits = G.DEATHS.filter(([k]) => x.includes(k)); assert.strictEqual(hits.length, 1, 'death needs exactly one title: ' + x.slice(0, 60)); used.add(hits[0][1]); }
   assert.strictEqual(used.size, G.DEATHS.length, 'unused death titles'); }

@@ -490,7 +490,8 @@
     $('death-text').textContent = nameIt(text);
     openPanel('death');
   }
-  $('d-retry').addEventListener('click', () => { if (snapshot) { snapshot.secs = s.secs; startFrom(snapshot); } });
+  $('d-retry').addEventListener('click', () => { if (snapshot) { snapshot.secs = s.secs; for (const k of Object.keys(snapshot.flags)) if (k.startsWith('warn_')) delete snapshot.flags[k];   // after a death you get the warning again
+    startFrom(snapshot); } });
   $('d-restore').addEventListener('click', () => openSlots('restore'));
   $('d-restart').addEventListener('click', newGame);
 

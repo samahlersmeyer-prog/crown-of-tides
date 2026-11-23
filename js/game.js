@@ -67,14 +67,18 @@
   // Award points once per key.
   const pts = (s, key, n) => { const k = 'pts_' + key; if (s.flags[k]) return; s.flags[k] = true; s.score += n; };
   const say = (...lines) => ({ say: lines });
+  // Walking into danger gets one warning first, as in the old games; do it again and you die.
+  // The warning is forgotten when you leave the room (see enter), so a slip later is warned again.
+  const brink = (s, key, warning, death) => flag(s, 'warn_' + key) ? { die: death } : (set(s, 'warn_' + key), say(warning));
+  const LAGOON_WARN = 'You dip a foot into the lagoon. Something long and heavy slides past under the surface, in no hurry at all.\n\nPerhaps not. One more step and you will find out what it eats.';
   // The open sea: walk into it and the tide takes you, like the old games.
   const LAGOON_DEATH = 'You wade into the turquoise lagoon. Something large and toothy, which is not a Tide Warden, decides you are lunch.\n\nThe queen\'s lagoon keeps its own guards.';
-  const sea = (rect, death) => ({
+  const sea = (rect, death, warning) => ({
     id: 'sea', name: 'the sea', rect,
     look: () => say('Endless blue water, all the way to the horizon.'),
     hand: () => say('The water is cold, and very, very salty.'),
     talk: () => say('You call out across the waves. The sea does not answer. It rarely does.'),
-    walk: () => ({ die: death || 'You wade into the surf for a refreshing swim. A riptide has other plans.\n\nIt carries you past the reef, past the horizon, and into the next chapter of somebody else\'s story.' })
+    walk: s => brink(s, 'sea', warning || 'You wade in up to your knees. The current grabs at your legs and pulls, hard, as if the sea would like to keep you.\n\nYou scramble back to dry ground. Any deeper would be the end of you.', death || 'You wade into the surf for a refreshing swim. A riptide has other plans.\n\nIt carries you past the reef, past the horizon, and into the next chapter of somebody else\'s story.')
   });
   const once = (s, f, lines) => flag(s, f) ? null : (set(s, f), lines);
 
@@ -198,7 +202,7 @@
     id, name, rect, at, gone: s => flag(s, 'w_' + id),
     look: () => say(look),
     talk: () => say([id, taunt]),
-    hand: () => ({ die: 'You try to shove the ' + name + ' aside.\n\nThe Tide Wardens are small, but there are five of them, and they have been waiting all year for someone to drag into the lagoon.' }),
+    hand: s => brink(s, 'warden', 'You raise a hand to push the imp aside. All five Wardens turn to look at you at once, and five small grins get wider.\n\nYou lower your hand. That felt like a very bad idea.', 'You try to shove the ' + name + ' aside.\n\nThe Tide Wardens are small, but there are five of them, and they have been waiting all year for someone to drag into the lagoon.'),
     item: (s, i) => {
       if (i !== beat[0]) return say([id, wrong]);
       lose(s, i); set(s, 'w_' + id); pts(s, 'w_' + id, 4);
@@ -277,14 +281,14 @@
           },
           walk: s => {
             if (!flag(s, 'door_open')) return null;
-            if (!has(s, 'glowcap') && !has(s, 'lantern')) return { die: 'You step into the pitch-black tunnel. Three steps in, the floor stops. You don\'t.\n\nNext time, maybe bring a light.' };
+            if (!has(s, 'glowcap') && !has(s, 'lantern')) return brink(s, 'tunnel', 'You peer into the opening. It is black as pitch in there. You cannot see the floor, or whether there is one.\n\nGoing in without a light would be a very short adventure.', 'You step into the pitch-black tunnel. Three steps in, the floor stops. You don\'t.\n\nNext time, maybe bring a light.');
             return { go: { to: 'tunnel', x: 30, y: 172 } };
           }
         },
         {
           id: 'edge', name: 'cliff edge', rect: [0, 115, 48, 85],
           look: () => say('A sheer drop to the rocks and surf far below. Gulls wheel beneath you. Beneath you!'),
-          hand: () => ({ die: 'You decide to climb down the cliff for a better look.\n\nYou get a much better look, very quickly.' }),
+          hand: s => brink(s, 'cliff', 'You lean out over the edge. Loose stones skitter away and fall for a long, long time before you hear them land.\n\nClimbing down here would be the last thing you ever did.', 'You decide to climb down the cliff for a better look.\n\nYou get a much better look, very quickly.'),
           walk: () => say('You get as close to the edge as your stomach allows, which isn\'t very close.')
         },
         { id: 'sea', name: 'sea', rect: [0, 60, 190, 50], look: () => say('The Tidewater Isles dot the horizon: one wrapped in purple mist, one bristling with tiny towers, one a single great spire of rock.') }
@@ -312,7 +316,7 @@
           id: 'fountain', name: 'fountain', rect: [164, 115, 80, 55], at: [205, 178],
           look: () => say('A fountain of a leaping dolphin. Its basin is full of coins tossed in for luck.'),
           item: (s, i) => { if (i !== 'coin') return null; lose(s, 'coin'); pts(s, 'wish', 2); return say('You flip the smuggler\'s coin into the fountain and make a wish. You won\'t say what it was, but it has copper hair.'); },
-          hand: () => ({ die: 'You scoop a handful of coins from the fountain. The guards at the gate are on you in seconds.\n\n"Robbing the Wishing Fountain on the princess\'s wedding day? The Steward will love this."\n\nYou spend the rest of your life in the Steward\'s dungeon, wishing.' })
+          hand: s => brink(s, 'fountain', 'Your fingers close on the wet coins. Across the square, a guard stops mid-yawn and stares straight at you.\n\nYou let the coins go. Those are other people\'s wishes, and the guards plainly take that seriously.', 'You scoop a handful of coins from the fountain. The guards at the gate are on you in seconds.\n\n"Robbing the Wishing Fountain on the princess\'s wedding day? The Steward will love this."\n\nYou spend the rest of your life in the Steward\'s dungeon, wishing.')
         },
         {
           id: 'guards', name: 'castle guards', rect: [252, 110, 68, 58], at: [240, 176],
@@ -424,8 +428,8 @@
           id: 'wisp', name: 'floating light', rect: [228, 86, 40, 40],
           look: () => say('A bobbing blue light drifts just out of reach, beckoning. It seems very friendly. Suspiciously friendly.'),
           talk: () => say('The light giggles. Lights should not giggle.'),
-          hand: () => ({ die: 'You follow the pretty light deeper into the mist. It leads you, giggling, straight into the bog.\n\nBram did tell you not to follow any lights.' }),
-          walk: () => ({ die: 'You follow the pretty light deeper into the mist. It leads you, giggling, straight into the bog.\n\nBram did tell you not to follow any lights.' })
+          hand: s => brink(s, 'wisp', 'You take a step after the pretty glow. Your boot sinks to the ankle in cold black mud, and the glow bobs a little further off, waiting.\n\nYou pull your foot free. Following it any further would be a mistake.', 'You follow the pretty light deeper into the mist. It leads you, giggling, straight into the bog.\n\nBram did tell you not to follow any lights.'),
+          walk: s => brink(s, 'wisp', 'You take a step after the pretty glow. Your boot sinks to the ankle in cold black mud, and the glow bobs a little further off, waiting.\n\nYou pull your foot free. Following it any further would be a mistake.', 'You follow the pretty light deeper into the mist. It leads you, giggling, straight into the bog.\n\nBram did tell you not to follow any lights.')
         }
       ]
     },
@@ -533,7 +537,7 @@
         {
           id: 'gear', name: 'great gear', rect: [100, 40, 115, 110], at: [158, 168],
           look: s => say(flag(s, 'clock') ? 'The great gear turns smoothly, teeth whirling past. Probably best not to touch it.' : 'An enormous brass gear, gritty with sand and seized solid.'),
-          hand: s => flag(s, 'clock') ? { die: 'You reach out to touch the turning gear.\n\nThe gear reaches back.\n\nThe Isle of Clocks will be hearing about this for years.' } : say('You heave at it. It does not heave back.'),
+          hand: s => flag(s, 'clock') ? brink(s, 'gear', 'You reach toward the turning gear. Its teeth are as long as your arm, and they snatch a thread from your sleeve as they go by.\n\nTouch that and it will take the rest of you with it.', 'You reach out to touch the turning gear.\n\nThe gear reaches back.\n\nThe Isle of Clocks will be hearing about this for years.') : say('You heave at it. It does not heave back.'),
           item: (s, i) => {
             if (i !== 'oilcan') return null;
             if (flag(s, 'clock')) return say('It\'s running beautifully already.');
@@ -580,7 +584,7 @@
           id: 'chick', name: 'roc chick', rect: [205, 70, 40, 34], at: [205, 160],
           look: s => say(flag(s, 'fed') ? 'The chick is full and drowsy, a happy ball of fluff.' : 'The chick is enormous, fluffy, and very, very hungry. It eyes you as though you might be lunch.'),
           talk: () => say('"PEEP," says the chick, at a volume that rattles your teeth.'),
-          hand: s => flag(s, 'fed') ? say('You pat the chick. It purrs, which you didn\'t know birds could do.') : { die: 'You reach out to pat the chick.\n\nThe chick decides you are food.\n\nIn fairness, you did walk right up to its plate.' },
+          hand: s => flag(s, 'fed') ? say('You pat the chick. It purrs, which you didn\'t know birds could do.') : brink(s, 'chick', 'You reach out to the chick. It snaps at your fingers with a beak the size of a wheelbarrow and misses by a whisker.\n\nIt is hungry, and you look like food.', 'You reach out to pat the chick.\n\nThe chick decides you are food.\n\nIn fairness, you did walk right up to its plate.'),
           item: (s, i) => {
             if (i !== 'fish') return say('The chick sniffs it and screeches louder.');
             lose(s, 'fish'); set(s, 'fed'); pts(s, 'feed', 4);
@@ -591,7 +595,7 @@
           id: 'feathers', name: 'golden feathers', rect: [256, 78, 30, 20], at: [250, 165], gone: s => has(s, 'feather'),
           look: () => say('Golden feathers tangled in the nest, glowing faintly like morning light.'),
           hand: s => {
-            if (!flag(s, 'fed')) return { die: 'You reach for a golden feather. The chick shrieks, "THIEF!" in bird.\n\nThe mother roc drops out of the sky like a thunderbolt and carries you off to a much smaller island, which is mostly beak.' };
+            if (!flag(s, 'fed')) return brink(s, 'feather', 'You reach for a golden feather. The chick puffs up and squawks a warning, and far overhead a huge shadow wheels around.\n\nYou pull your hand back. Rob a hungry chick and its mother will come for you.', 'You reach for a golden feather. The chick shrieks, "THIEF!" in bird.\n\nThe mother roc drops out of the sky like a thunderbolt and carries you off to a much smaller island, which is mostly beak.');
             gain(s, 'feather'); pts(s, 'feather', 7);
             return say('The mother roc watches as you take a single golden feather. She doesn\'t object. A gift, for feeding her child.', 'It\'s warm, and glows like the first light of morning.');
           }
@@ -612,13 +616,13 @@
       block: [[14, 140, 90, 12]],
       enter: s => once(s, 'seen_reef', ['A beach of pink coral sand. Rocks curl out into a turquoise lagoon. It is beautiful, and completely deserted.', 'Then the sand erupts. Five knee-high creatures with fins for ears and seaweed for hair pop up in a line between you and the water.', ['goggle', 'HALT! We are the Tide Wardens! No land-folk may pass to the queen\'s lagoon!'], ['lugs', 'We\'d hear you!'], ['snoot', 'We\'d smell you!'], ['lick', 'We\'d taste you!'], ['grabby', 'We\'d FEEL you!'], 'Each one has one enormous feature: an eye, a pair of ears, a nose, a tongue, a pair of grabbing hands. Getting past all five is going to take some cunning.']),
       spots: [
-        sea([0, 115, 320, 28], LAGOON_DEATH),
+        sea([0, 115, 320, 28], LAGOON_DEATH, LAGOON_WARN),
         { id: 'west', name: 'path to the tide pools', rect: [0, 150, 14, 50], at: [16, 170], walk: s => wardensLeft(s) ? say(['goggle', 'Oh no you don\'t!'], 'The wardens link arms and block the path.') : { go: { to: 'tidepools', x: 294, y: 172 } } },
         ...WARDENS,
         { id: 'boat', name: 'boat', rect: [268, 50, 52, 92], at: [250, 160], look: () => say('Your boat, waiting in the shallows.'), hand: boatFrom('reef'), walk: boatFrom('reef') },
         {
           id: 'lagoon', name: 'lagoon', rect: [0, 70, 320, 45], at: [140, 150],
-          walk: () => ({ die: LAGOON_DEATH }),
+          walk: s => brink(s, 'sea', LAGOON_WARN, LAGOON_DEATH),
           look: s => say(flag(s, 'summoned') ? 'The lagoon glitters around the mer-queen\'s rock.' : 'Clear turquoise water. Far below, you think you see towers made of coral.'),
           talk: s => flag(s, 'summoned') ? null : say(['rowan', 'Hello?'], 'The lagoon is unmoved. The guidebook said the mer-folk answer only to music.'),
           item: (s, i) => {
@@ -713,12 +717,12 @@
             if (i === 'lantern') return say(['weft', 'Fire? In a web? Are you mad?']);
             return say(['weft', 'That is not light, little fly.']);
           },
-          hand: () => ({ die: 'You reach up to touch the spider.\n\nMadame Weft is delighted. It isn\'t often lunch introduces itself.' })
+          hand: s => brink(s, 'spider', 'You reach up toward the spider. Madame Weft watches your hand come closer with all eight eyes, and politely licks her fangs.\n\nPerhaps hands off.', 'You reach up to touch the spider.\n\nMadame Weft is delighted. It isn\'t often lunch introduces itself.')
         },
         {
           id: 'web', name: 'web', rect: [112, 26, 106, 100], at: [162, 160],
           look: () => say('Dew-pearled silk, strand after strand, each one shining like silver thread.'),
-          hand: () => ({ die: 'You reach out to pluck a strand of the web.\n\nThe web plucks back. You are now part of Madame Weft\'s collection, wrapped up snug for later.\n\nPerhaps she would have simply traded.' })
+          hand: s => brink(s, 'web', 'Your finger brushes a strand of the web and sticks fast. It takes all your strength to pull it free.\n\nGrab hold properly and you will not get loose at all.', 'You reach out to pluck a strand of the web.\n\nThe web plucks back. You are now part of Madame Weft\'s collection, wrapped up snug for later.\n\nPerhaps she would have simply traded.')
         },
         { id: 'trees', name: 'trees', rect: [0, 0, 100, 140], look: () => say('The trees are twisted into shapes that look almost like faces. Almost.') },
         {
@@ -746,7 +750,7 @@
         {
           id: 'forge', name: 'great forge', rect: [110, 40, 95, 110], at: [152, 160],
           look: s => say(flag(s, 'clock') ? 'The forge blazes white-gold. This is the true fire the stories talk about: it never goes out, and it burns only what it\'s told to.' : 'The furnace is cold. Ashes, but no ember.'),
-          hand: s => flag(s, 'clock') ? { die: 'You reach into the Great Forge.\n\nIt was very clear about burning only what it\'s told to. Nobody told it not to burn you.' } : say('Cold ash. It gets all over your sleeve.'),
+          hand: s => flag(s, 'clock') ? brink(s, 'forge', 'You stretch a hand toward the Great Forge. The heat singes the hair off your knuckles before you get within a foot.\n\nReach in there and you will not be getting your hand back.', 'You reach into the Great Forge.\n\nIt was very clear about burning only what it\'s told to. Nobody told it not to burn you.') : say('Cold ash. It gets all over your sleeve.'),
           item: (s, i) => {
             if (i !== 'emptylantern') return i === 'lantern' ? say('Your lantern already holds an ember.') : null;
             if (!flag(s, 'clock')) return say('The forge is cold. There\'s nothing to light it with.');
@@ -774,7 +778,7 @@
           id: 'goat', name: 'mountain goat', rect: [185, 118, 40, 34], at: [175, 148], gone: s => flag(s, 'goat'),
           look: () => say('A shaggy white goat with impressive horns and the expression of someone who has never once moved for anybody.'),
           talk: () => say(['rowan', 'Excuse me. Could I just squeeze past?'], 'The goat chews. The goat stares. The goat does not move.'),
-          hand: () => ({ die: 'You try to shove the goat out of the way.\n\nThe goat tries to shove you out of the way.\n\nThe goat is better at it.' }),
+          hand: s => brink(s, 'goat', 'You put a hand on the goat to push it aside. The goat lowers its horns, paws the ledge, and looks from you to the long drop beside you.\n\nShove it and you will lose.', 'You try to shove the goat out of the way.\n\nThe goat tries to shove you out of the way.\n\nThe goat is better at it.'),
           item: (s, i) => {
             if (i === 'bun') { lose(s, 'bun'); set(s, 'goat'); pts(s, 'goat', 5); return say('You hold out Marla\'s sweet bun. The goat sniffs it, snatches it, and trots happily up onto a rock above the ledge to eat it in peace.', 'The way is clear.', ['rowan', 'Bested by a bun. Father must never hear of this.']); }
             if (i === 'fish') return say('The goat looks deeply offended.');
@@ -824,7 +828,7 @@
           id: 'hound', name: 'hound', rect: [124, 154, 56, 26],
           look: s => say(flag(s, 'hound') ? 'Varrick\'s hound, snoring like a landslide.' : 'A huge black hound with a spiked collar, watching your every move. Its growl never quite stops.'),
           talk: s => flag(s, 'hound') ? say('You whisper "good boy." It snores contentedly.') : say(['rowan', 'Good boy?'], 'The hound\'s growl gets louder. Not a good boy, apparently.'),
-          hand: s => flag(s, 'hound') ? say('You don\'t pat sleeping hounds. Especially this one.') : { die: 'You reach out to pat the hound.\n\nThe hound reaches out to pat you, with its teeth.\n\nMarla did warn you.' },
+          hand: s => flag(s, 'hound') ? say('You don\'t pat sleeping hounds. Especially this one.') : brink(s, 'houndpat', 'You stretch a hand toward the hound. Its lip curls back from teeth like tent pegs, and its growl rattles the doors.\n\nThis is not a patting sort of dog. Not while it is awake.', 'You reach out to pat the hound.\n\nThe hound reaches out to pat you, with its teeth.\n\nMarla did warn you.'),
           item: (s, i) => {
             if (i === 'songsheet') {
               if (flag(s, 'hound')) return say('It\'s already asleep.');
@@ -832,7 +836,7 @@
               return say('You unfold Fennick\'s song sheet and, very quietly, sing the Lullaby of the Isles.', 'The hound\'s ears droop. Its eyes droop. Its whole enormous body droops. By the second verse it is flat on its side, snoring like a landslide.');
             }
             if (i === 'fish' || i === 'bun') return say('The hound isn\'t hungry. It\'s guarding. Big difference.');
-            return { die: 'You wave it at the hound.\n\nThe hound takes this personally.' };
+            return brink(s, 'houndwave', 'You hold it out toward the hound. It sniffs once and snarls, hackles up.\n\nIt does not like that at all. Try it again and you will lose the arm.', 'You wave it at the hound.\n\nThe hound takes this personally.');
           }
         }
       ]
@@ -900,7 +904,7 @@
           id: 'doors', name: 'doors to the Great Hall', rect: [218, 14, 62, 112], at: [250, 156],
           look: () => say('Great carved doors, slightly ajar. Wedding music seeps through.'),
           walk: s => {
-            if (!has(s, 'tabard')) return { die: 'You stroll toward the doors of the Great Hall.\n\n"Halt! Who are you?" The guards take one look at your salt-stained clothes and drag you to the dungeon.\n\nPerhaps you should have dressed for the occasion.' };
+            if (!has(s, 'tabard')) return brink(s, 'doors', 'You take a step toward the great doors. The guards look you up and down: salt-stained clothes, no castle livery. A hand drifts to a sword hilt.\n\nYou step back. Walk up to them dressed like this and you will not be walking away.', 'You stroll toward the doors of the Great Hall.\n\n"Halt! Who are you?" The guards take one look at your salt-stained clothes and drag you to the dungeon.\n\nPerhaps you should have dressed for the occasion.');
             pts(s, 'gallery', 4);
             return { say: ['You straighten your servant\'s tabard, lower your eyes and stride toward the doors like you belong there. The guards barely glance at you.'], go: { to: 'hall', x: 30, y: 180 } };
           }
@@ -920,7 +924,7 @@
         { id: 'back', name: 'way out to the cliffs', rect: [0, 120, 16, 80], at: [20, 176], exit: { to: 'cliffs', x: 225, y: 152 } },
         { id: 'stairs', name: 'stairs up', rect: [200, 30, 100, 120], at: [230, 166], exit: { to: 'cellar', x: 30, y: 176 } },
         { id: 'scrawl', name: 'scratched writing', rect: [10, 30, 80, 70], look: () => say('Old smugglers\' graffiti: "GRUMBO WOZ ERE." And below: "NO HE WOZNT. — GRUMBO\'S MUM."') },
-        { id: 'chasm', name: 'chasm', rect: [138, 128, 64, 52], look: () => say('A crack in the floor, black and bottomless. You keep well clear.'), hand: () => ({ die: 'You reach down into the chasm to see how deep it goes. You find out personally.' }) }
+        { id: 'chasm', name: 'chasm', rect: [138, 128, 64, 52], look: () => say('A crack in the floor, black and bottomless. You keep well clear.'), hand: s => brink(s, 'chasm', 'You kneel and reach into the crack. Cold air breathes up from below, and the edge crumbles under your knee.\n\nYou scramble back. It would be a very long way down.', 'You reach down into the chasm to see how deep it goes. You find out personally.') }
       ]
     },
 
@@ -945,8 +949,8 @@
         {
           id: 'guard', name: 'sleeping guard', rect: [266, 120, 34, 52],
           look: () => say('A guard snoring on a stool, a half-empty mug of wedding wine at his feet.'),
-          talk: () => ({ die: '"Excuse me," you say politely.\n\nThe guard wakes up, sees a stranger in the cellar, and shouts. Half the castle guard comes running.\n\nSome sleeping guards are best left lying.' }),
-          hand: () => ({ die: 'You give the guard a friendly shake. He wakes up, takes one look at you, and bellows for help.\n\nSome sleeping guards are best left lying.' })
+          talk: s => brink(s, 'guard', 'The sleeping guard snorts and shifts as you come close, and his hand tightens on his spear.\n\nWake him and he will have the whole castle down here. Best let him sleep.', '"Excuse me," you say politely.\n\nThe guard wakes up, sees a stranger in the cellar, and shouts. Half the castle guard comes running.\n\nSome sleeping guards are best left lying.'),
+          hand: s => brink(s, 'guard', 'The sleeping guard snorts and shifts as you come close, and his hand tightens on his spear.\n\nWake him and he will have the whole castle down here. Best let him sleep.', 'You give the guard a friendly shake. He wakes up, takes one look at you, and bellows for help.\n\nSome sleeping guards are best left lying.')
         }
       ]
     },
@@ -963,10 +967,10 @@
         {
           id: 'varrick', name: 'Grand Steward Varrick', rect: [126, 92, 26, 60], at: [138, 170],
           look: () => say('Varrick: tall, thin, dressed in black on his own wedding day, with a smile like a crack in ice. The black pearl at his throat seems to drink the candlelight.'),
-          talk: () => ({ die: '"I object!" you announce to Varrick.\n\n"Noted," says Varrick. "Guards, throw this objection into the sea."\n\nThey do. You have now been shipwrecked twice in one day.' }),
-          hand: () => ({ die: 'You punch the groom. It is very satisfying for about two seconds.\n\nThe guards drag you off, and the Steward\'s smile is the last thing you see.' }),
+          talk: s => brink(s, 'object', 'You draw breath to speak. Varrick\'s eyes find you across the hall, cold as a fish on ice, and two guards step closer.\n\nOne word out of place and you are finished. You need proof, not speeches.', '"I object!" you announce to Varrick.\n\n"Noted," says Varrick. "Guards, throw this objection into the sea."\n\nThey do. You have now been shipwrecked twice in one day.'),
+          hand: s => brink(s, 'punch', 'Your hand curls into a fist. The guards on either side of Varrick notice, and their spears tip toward you.\n\nHit him and you will not get a second swing.', 'You punch the groom. It is very satisfying for about two seconds.\n\nThe guards drag you off, and the Steward\'s smile is the last thing you see.'),
           item: (s, i) => i === 'letter'
-            ? { die: 'You wave the letter at Varrick. He plucks it from your hand, holds it to a candle, and smiles as it burns.\n\n"What letter?" he says, as the guards close in.' }
+            ? brink(s, 'letter', 'You start to pull out the letter. Varrick\'s gaze drops to your hand and he smiles a thin smile, standing very close to a candle.\n\nShow it to him and it is ash. Someone else needs to read this.', 'You wave the letter at Varrick. He plucks it from your hand, holds it to a candle, and smiles as it burns.\n\n"What letter?" he says, as the guards close in.')
             : say('Varrick looks at it, and you, with polite contempt.')
         },
         {
@@ -1021,14 +1025,14 @@
         {
           id: 'varrick', name: 'Varrick', rect: [222, 92, 34, 72], at: [214, 180], gone: s => flag(s, 'beaten'),
           look: () => say('Varrick, crackling with dark lightning. The black pearl blazes at his throat.'),
-          talk: () => ({ die: '"Let\'s talk about this," you begin.\n\nVarrick doesn\'t. The bolt of black lightning is the last thing you see.\n\nWhat is cast at you, someone once said, send home.' }),
-          hand: () => ({ die: 'You charge Varrick. He flicks a finger, and you become a very surprised-looking sea urchin.\n\nWhat is cast at you, someone once said, send home.' }),
+          talk: s => brink(s, 'vtalk', 'You start to speak. Varrick raises his hand, and black lightning crackles between his fingers.\n\nWords will not stop that.', '"Let\'s talk about this," you begin.\n\nVarrick doesn\'t. The bolt of black lightning is the last thing you see.\n\nWhat is cast at you, someone once said, send home.'),
+          hand: s => brink(s, 'vcharge', 'You tense to charge. Varrick lazily lifts one finger, and the air around you tastes of storms.\n\nRush him and he will finish it.', 'You charge Varrick. He flicks a finger, and you become a very surprised-looking sea urchin.\n\nWhat is cast at you, someone once said, send home.'),
           item: (s, i) => {
             if (i === 'mirror') {
               set(s, 'beaten'); pts(s, 'defeat', 12);
               return say('Varrick hurls a bolt of black lightning. You raise the mirror shell.', 'The bolt strikes the shell, rebounds, and slams into the black pearl at Varrick\'s throat. The pearl cracks, then shatters with a sound like breaking ice.', ['varrick', 'No... NO!'], 'Varrick shrinks, and shrinks, and when the light fades there is nothing on the floor but a small, furious crab, clicking at you.', 'The black cage around Elowen dissolves. She stumbles into your arms.');
             }
-            return { die: 'You hold it up at Varrick. He seems unimpressed. The bolt of black lightning is the last thing you see.\n\nWhat is cast at you, someone once said, send home.' };
+            return brink(s, 'vitem', 'You start to raise it. Varrick laughs, and lightning gathers in his palm.\n\nThat will not save you.', 'You hold it up at Varrick. He seems unimpressed. The bolt of black lightning is the last thing you see.\n\nWhat is cast at you, someone once said, send home.');
           }
         },
         { id: 'crab', name: 'crab', rect: [222, 172, 24, 14], gone: s => !flag(s, 'beaten'), look: () => say('Formerly the Grand Steward. Currently a crab. He clicks at you menacingly, which is less menacing than it used to be.'), hand: () => say('You scoop up the crab and drop it out the window into the sea. It seems the kindest thing for everyone, especially you.') },
@@ -1071,7 +1075,7 @@
   }
 
   function houndCheck(s, go) {
-    if (!flag(s, 'hound')) return { die: 'You try to slip past the hound.\n\nYou do not slip past the hound.\n\nSomewhere, Marla is shaking her head.' };
+    if (!flag(s, 'hound')) return brink(s, 'hound', 'You edge toward the door. The hound lifts its great head and growls, low and long, and its eyes follow your ankles.\n\nYou stop. One more step and you are supper.', 'You try to slip past the hound.\n\nYou do not slip past the hound.\n\nSomewhere, Marla is shaking her head.');
     return go ? { go } : say('The study door is locked tight.');
   }
 
@@ -1335,6 +1339,7 @@
 
   function enter(s, go) {
     s.room = go.to; [s.x, s.y] = nearestFree(go.to, go.x, go.y);
+    for (const k of Object.keys(s.flags)) if (k.startsWith('warn_')) delete s.flags[k];
     if (flag(s, 'note_sent') && ROOMS[go.to].isle !== 'crown') set(s, 'note_away');
     set(s, 'visited_' + ROOMS[go.to].isle);
     const e = ROOMS[go.to].enter;

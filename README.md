@@ -6,7 +6,7 @@ Prince Rowan of Thornmere washes up on the Tidewater Isles, chasing a princess h
 
 **Play:** https://samahlersmeyer-prog.github.io/crown-of-tides/
 
-- Five islands plus the castle, 18 hand-painted scenes, and a magic map that takes you to any island from anywhere outdoors
+- Five islands plus a sneak-through castle, 27 hand-painted scenes, and a magic map that takes you to any island from anywhere outdoors
 - Walk, Look, Hand, Talk and Item verbs; drop-down icon bar and verb cursors with a mouse, right-click to cycle
 - Inventory with its own Look / Hand / Talk / Use-on-item actions, and a Sierra-style hint book
 - Rowan walks around obstacles and strolls in from the edge of each screen

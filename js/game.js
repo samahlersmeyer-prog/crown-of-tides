@@ -21,12 +21,19 @@
     glowcap: { name: 'Glowcap', desc: 'A fat mushroom glowing a soft, steady green. Better than a lantern, and it smells faintly of mint.' },
     whistle: { name: 'Silver whistle', desc: 'A slender silver whistle. Three notes are etched along its side, rising like a wave.' },
     oilcan: { name: 'Oil can', desc: 'A brass oil can with a long spout. Pim has written "DO NOT DRINK" on it, which raises questions.' },
+    emptylantern: { name: 'Empty lantern', desc: 'A brass lantern from Pim, empty and cold. It needs true fire from the Great Forge.' },
+    bun: { name: 'Sweet bun', desc: 'One of Marla\'s sweet buns, sticky with honey. It smells like heaven. You are saving it, for reasons you can\'t quite explain.' },
+    thread: { name: 'Spider silk', desc: 'A single strand of Madame Weft\'s silk, finer than hair and stronger than rope. It shines like silver.' },
+    songsheet: { name: 'Song sheet', desc: 'Fennick\'s handwritten Lullaby of the Isles. "Sing it to anything with teeth," he said.' },
+    keys: { name: 'Key ring', desc: 'A heavy ring of castle keys, lifted from a sleeping guard. One of them is black, with a silver bow.' },
+    coin: { name: 'Old coin', desc: 'A worn gold coin stamped with a smuggler\'s skull. Lucky, maybe.' },
+    tabard: { name: 'Servant\'s tabard', desc: 'A sea-green tabard with the castle crest. Wearing it, you look like every other servant in the castle. That\'s the point.' },
     lantern: { name: 'Forge lantern', desc: 'A brass lantern holding a living ember from the Clockmakers\' forge. It never goes out and it never burns your fingers.' },
     fish: { name: 'Silver fish', desc: 'A plump silver fish, wrapped in paper. It smells exactly like a fish.' },
     compass: { name: 'Magic map', desc: 'Hester\'s magic map of the Tidewater Isles. The ink moves with the tides, and the little compass rose always points the way home. Touch an island on it, outdoors, and the map carries you there.' },
     feather: { name: 'Feather of Dawn', desc: 'A long golden feather from the roc of the Sentinel Isle. It glows like the first minute of morning. Old stories say dawn breaks any spell cast in the dark.' },
     mirror: { name: 'Mirror shell', desc: 'A shell polished to a perfect mirror by the mer-queen Nerissa. "What is cast at you," she said, "send home."' },
-    letter: { name: "Varrick's letter", desc: 'A letter in the Steward\'s own hand: "The old king sleeps in the tower and will not wake. The true will is ash. My copy names me regent and Elowen\'s husband. The scribe has been paid. Burn this." He did not burn it.' }
+    letter: { name: "Varrick's letter", desc: 'A letter from Varrick\'s desk, in his own hand: "The old king sleeps in the tower and will not wake. The true will is ash. My copy names me regent and Elowen\'s husband. The scribe has been paid. Burn this." He did not burn it.' }
   };
 
   const ISLES = {
@@ -80,19 +87,19 @@
             : 'What\'s left of the Gallant Stag. Among the splintered planks, something gold catches the light.'),
           hand: s => {
             if (flag(s, 'ring_taken')) return say('Nothing else in the wreck but splinters and regret.');
-            set(s, 'ring_taken'); gain(s, 'ring'); pts(s, 'ring', 5);
+            set(s, 'ring_taken'); gain(s, 'ring'); pts(s, 'ring', 4);
             return say('You dig through the splinters and find your signet ring, still on its chain. Your father would have been furious if you\'d lost it.');
           }
         },
         {
           id: 'bottle', name: 'bottle', rect: [190, 156, 20, 16], at: [196, 176], gone: s => flag(s, 'bottle_taken'),
           look: () => say('A green glass bottle, half buried in the sand. There\'s a note inside.'),
-          hand: s => { set(s, 'bottle_taken'); gain(s, 'bottle'); pts(s, 'bottle', 5); return say('You pull the bottle out of the sand. The cork won\'t budge, but the note inside looks old.'); }
+          hand: s => { set(s, 'bottle_taken'); gain(s, 'bottle'); pts(s, 'bottle', 4); return say('You pull the bottle out of the sand. The cork won\'t budge, but the note inside looks old.'); }
         },
         {
           id: 'conch', name: 'conch shell', rect: [250, 172, 22, 16], at: [256, 186], gone: s => flag(s, 'conch_taken'),
           look: () => say('A large pink conch shell, bigger than your hand.'),
-          hand: s => { set(s, 'conch_taken'); gain(s, 'conch'); pts(s, 'conch', 5); return say('You pick up the conch. When you hold it near your ear you could swear the sea is whispering a name.'); }
+          hand: s => { set(s, 'conch_taken'); gain(s, 'conch'); pts(s, 'conch', 4); return say('You pick up the conch. When you hold it near your ear you could swear the sea is whispering a name.'); }
         },
         { id: 'sea', name: 'sea', rect: [0, 70, 320, 44], look: () => say('The sea that ate your ship looks perfectly innocent now. Typical.'), hand: () => say('You\'ve had quite enough of the sea for one day.') }
       ]
@@ -114,7 +121,7 @@
           item: (s, i) => {
             if (i !== 'whistle') return null;
             if (flag(s, 'door_open')) return say('The door is already open.');
-            set(s, 'door_open'); pts(s, 'door', 10);
+            set(s, 'door_open'); pts(s, 'door', 8);
             return say('You put the silver whistle to your lips and play the three etched notes. The carved notes on the rock glow one by one, and with a deep grinding sound the door rolls aside.');
           },
           walk: s => {
@@ -142,6 +149,7 @@
       spots: [
         { id: 'west', name: 'path to the beach', rect: [0, 140, 12, 60], at: [12, 172], exit: { to: 'beach', x: 294, y: 170 } },
         { id: 'south', name: 'road to the docks', rect: [100, 194, 120, 6], at: [160, 192], exit: { to: 'docks', x: 30, y: 168 } },
+        { id: 'inn', name: 'the Drowned Sailor inn', rect: [98, 106, 20, 34], at: [107, 154], exit: { to: 'inn', x: 30, y: 178 }, look: () => say('A crooked door under a sign of a sailor waving cheerfully from inside a shark.') },
         { id: 'shop', name: 'curio shop', rect: [18, 86, 34, 54], at: [36, 152], exit: { to: 'shop', x: 40, y: 178 },
           look: () => say('A crooked little shop. The sign reads "BRAM\'S CURIOS — Treasures of the Tide."') },
         {
@@ -152,6 +160,7 @@
         {
           id: 'fountain', name: 'fountain', rect: [124, 112, 72, 40], at: [160, 166],
           look: () => say('A fountain of a leaping dolphin. Its basin is full of coins tossed in for luck.'),
+          item: (s, i) => { if (i !== 'coin') return null; lose(s, 'coin'); pts(s, 'wish', 2); return say('You flip the smuggler\'s coin into the fountain and make a wish. You won\'t say what it was, but it has copper hair.'); },
           hand: () => ({ die: 'You scoop a handful of coins from the fountain. The guards at the gate are on you in seconds.\n\n"Robbing the Wishing Fountain on the princess\'s wedding day? The Steward will love this."\n\nYou spend the rest of your life in the Steward\'s dungeon, wishing.' })
         },
         {
@@ -184,7 +193,7 @@
           hand: () => say('Bram is not for sale.'),
           item: (s, i) => {
             if (i === 'bottle') {
-              lose(s, 'bottle'); gain(s, 'token'); set(s, 'traded'); pts(s, 'token', 10);
+              lose(s, 'bottle'); gain(s, 'token'); set(s, 'traded'); pts(s, 'token', 6);
               return say('Bram\'s eyes light up. He works the cork out with his teeth and reads the note aloud.', ['bram', '"Dear Mum, the voyage is going fine, no need to worry. P.S. Please feed my goat." Beautiful!'], ['bram', 'Here, lad, a ferry token as promised. The ferrywoman at the docks will take you out to the near isles.']);
             }
             if (i === 'conch') return say(['bram', 'Pretty, but I\'ve got a hundred of those. Now, the Oracle out on the Isle of Mists, she listens to shells. Says the sea tells her things.']);
@@ -212,7 +221,7 @@
           talk: s => flag(s, 'paid') ? say(['nell', 'Hop in whenever you\'re ready. Mists or Clocks, I\'ll run you back and forth. Nothing else to do on a wedding day.'], ['nell', 'The far isles? Not in my boat. Hester at the lighthouse has a map that goes anywhere, they say.'])
             : say(['nell', 'Ferry to the near isles. One token. No token, no boat. No exceptions, not even for handsome shipwrecked fellows.']),
           item: (s, i) => {
-            if (i === 'token') { lose(s, 'token'); set(s, 'paid'); pts(s, 'paid', 5); return say('She bites the token, nods, and pockets it.', ['nell', 'That buys you as many trips as you like today. Climb aboard when you\'re ready.']); }
+            if (i === 'token') { lose(s, 'token'); set(s, 'paid'); pts(s, 'paid', 4); return say('She bites the token, nods, and pockets it.', ['nell', 'That buys you as many trips as you like today. Climb aboard when you\'re ready.']); }
             if (i === 'ring') return say(['nell', 'Pretty. Not a token.']);
             return say(['nell', 'Don\'t want it.']);
           }
@@ -235,7 +244,7 @@
             ? say(['hester', 'Keep that chart dry, lad. The needle always points home, wherever home turns out to be.'])
             : say(['hester', 'Six weeks ago the Steward ordered my light put out. Said it "confused the fish." Since then, three ships have hit the rocks.'], ['hester', 'Yours makes four, by the look of you.'], ['hester', 'And the flame won\'t catch from any common fire now. It needs true fire, from the Clockmakers\' forge. Bring me that and I\'ll give you anything I own.']),
           hand: () => say('Hester gives you a look that could relight the lamp on its own.'),
-          item: (s, i) => i === 'lantern' ? lightLamp(s) : i === 'ring' ? say(['hester', 'Thornmere! So you\'re the prince from the wreck. Shame about your ship. Shame about my light.']) : say(['hester', 'What would I want with that?'])
+          item: (s, i) => i === 'lantern' ? lightLamp(s) : i === 'emptylantern' ? say(['hester', 'An empty lantern won\'t light anything, lad. It needs true fire in it.']) : i === 'ring' ? say(['hester', 'Thornmere! So you\'re the prince from the wreck. Shame about your ship. Shame about my light.']) : say(['hester', 'What would I want with that?'])
         },
         {
           id: 'lamp', name: 'great lamp', rect: [128, 36, 64, 86], at: [160, 160],
@@ -255,11 +264,12 @@
       enter: s => once(s, 'seen_mist', ['The mist is so thick you could spread it on bread. Strange lights drift between the trees.']),
       spots: [
         { id: 'boat', name: 'ferry boat', rect: [232, 168, 88, 32], at: [222, 180], look: () => say('The ferry bobs at the shore. The ferrywoman is pretending not to be nervous.'), hand: boatFrom('mists'), walk: boatFrom('mists') },
+        { id: 'west', name: 'path into the Mistwood', rect: [0, 120, 12, 80], at: [14, 168], exit: { to: 'mistwood', x: 294, y: 170 } },
         { id: 'cave', name: 'grotto', rect: [128, 66, 64, 70], at: [160, 150], exit: { to: 'oracle', x: 160, y: 188 }, look: () => say('A grotto mouth, its stones carved with eyes. Very welcoming.') },
         {
           id: 'glowcaps', name: 'glowing mushrooms', rect: [36, 158, 48, 26], at: [62, 180],
           look: s => say(has(s, 'glowcap') ? 'Glowcaps. You\'ve already picked one; that\'s plenty.' : 'A clump of mushrooms glowing a soft green. Handy in the dark.'),
-          hand: s => { if (has(s, 'glowcap')) return say('One glowcap is plenty. Leave some for the fairies.'); gain(s, 'glowcap'); pts(s, 'glowcap', 5); return say('You pick a plump glowcap. It keeps glowing in your hand.'); }
+          hand: s => { if (has(s, 'glowcap')) return say('One glowcap is plenty. Leave some for the fairies.'); gain(s, 'glowcap'); pts(s, 'glowcap', 3); return say('You pick a plump glowcap. It keeps glowing in your hand.'); }
         },
         {
           id: 'wisp', name: 'floating light', rect: [228, 86, 40, 40],
@@ -293,7 +303,7 @@
           hand: () => say('You don\'t poke oracles.'),
           item: (s, i) => {
             if (i === 'conch') {
-              lose(s, 'conch'); gain(s, 'whistle'); set(s, 'got_whistle'); pts(s, 'whistle', 10);
+              lose(s, 'conch'); gain(s, 'whistle'); set(s, 'got_whistle'); pts(s, 'whistle', 8);
               return say('The Oracle holds the conch to her ear and smiles.', ['oracle', 'Ah. The sea has been worried about you.'], 'She hands you a slender silver whistle.', ['oracle', 'Play its three notes at the Singing Cliffs. The mer-folk know the tune too.']);
             }
             if (i === 'ring') return say(['oracle', 'I know who you are, child. It is the princess who must see that.']);
@@ -311,7 +321,7 @@
       name: 'Isle of Clocks', isle: 'clocks', scale: [150, 0.86, 194, 1.03],
       walk: [14, 150, 240, 194],
       block: [[82, 150, 20, 8], [194, 150, 20, 8]],
-      enter: s => { pts(s, 'clocks', 3); return once(s, 'seen_clocks', ['A town of brass and copper, all gears and chimneys. Everyone in it is frozen in place: a baker mid-knead, a fishmonger mid-shout. Above it all, the great tower clock reads one minute to noon. It has, you suspect, for some time.']); },
+      enter: s => { pts(s, 'clocks', 2); return once(s, 'seen_clocks', ['A town of brass and copper, all gears and chimneys. Everyone in it is frozen in place: a baker mid-knead, a fishmonger mid-shout. Above it all, the great tower clock reads one minute to noon. It has, you suspect, for some time.']); },
       spots: [
         { id: 'boat', name: 'ferry boat', rect: [244, 160, 76, 40], at: [236, 178], look: () => say('Your boat, waiting in the harbor.'), hand: boatFrom('clocks'), walk: boatFrom('clocks') },
         { id: 'tower', name: 'clock tower', rect: [120, 80, 40, 62], at: [140, 154], exit: { to: 'clocktower', x: 160, y: 188 }, look: s => say(flag(s, 'clock') ? 'The great clock ticks happily along.' : 'The tower door stands ajar. The great clock above it is stuck at one minute to noon.') },
@@ -337,17 +347,18 @@
       walk: [20, 160, 300, 194],
       spots: [
         { id: 'door', name: 'door', rect: [8, 80, 40, 84], at: [36, 176], exit: { to: 'clockharbor', x: 48, y: 158 } },
+        { id: 'back', name: 'back door to the Great Forge', rect: [306, 110, 14, 90], at: [300, 178], exit: { to: 'gearworks', x: 26, y: 176 } },
         {
           id: 'pim', name: 'Pim', rect: [188, 128, 26, 40], at: [180, 176],
           look: () => say('Pim the tinker: a gnome in goggles, two feet tall and nine-tenths beard.'),
           talk: s => {
             if (flag(s, 'clock') && !flag(s, 'got_lantern')) {
-              set(s, 'got_lantern'); gain(s, 'lantern'); pts(s, 'lantern', 5);
-              return say(['pim', 'You did it! I heard the tower start up. Everyone\'s moving again!'], ['pim', 'You\'ll want a reward. Here: a lantern with a living ember from the forge. It never goes out. Very good for dark tunnels. Also for lighting lighthouses, if you know any lighthouse keepers.']);
+              set(s, 'got_lantern'); gain(s, 'emptylantern'); pts(s, 'lantern', 3);
+              return say(['pim', 'You did it! I heard the tower start up. Everyone\'s moving again!'], ['pim', 'You\'ll want a reward. Here, my best lantern. Take it through my back door to the Great Forge and old Anvil will give it a living ember. True fire never goes out. Very good for dark tunnels. Also for lighthouses, if you know any lighthouse keepers.']);
             }
             if (flag(s, 'got_lantern')) return say(['pim', 'Off you go, off you go! I\'ve got forty-one clocks to reset.']);
             if (has(s, 'oilcan')) return say(['pim', 'The great gear, at the top of the tower! Oil it, and mind your fingers once it starts moving!']);
-            gain(s, 'oilcan'); pts(s, 'oilcan', 5);
+            gain(s, 'oilcan'); pts(s, 'oilcan', 4);
             return say(['pim', 'A visitor! A moving one! Most people stopped moving when the tower did.'], ['pim', 'The Steward\'s men came and poured sand in the great gear, and everything stopped. Everything except me. I keep my own clocks.'], ['pim', 'My knees won\'t manage the tower stairs. Take this oil can and oil the great gear for me, would you?']);
           },
           hand: () => say(['pim', 'Hands off the beard!']),
@@ -369,7 +380,7 @@
           item: (s, i) => {
             if (i !== 'oilcan') return null;
             if (flag(s, 'clock')) return say('It\'s running beautifully already.');
-            set(s, 'clock'); lose(s, 'oilcan'); pts(s, 'clock', 15);
+            set(s, 'clock'); lose(s, 'oilcan'); pts(s, 'clock', 12);
             return say('You oil every tooth of the great gear. Sand grinds, metal groans, and then, with a CLUNK you feel in your boots, the gear begins to turn.', 'Far above, the great clock strikes noon. Twelve booming notes roll across the island, and outside, the whole town starts moving again.');
           }
         },
@@ -399,9 +410,9 @@
       name: "The Roc's Aerie", isle: 'sentinels', scale: [150, 0.85, 194, 1.03],
       walk: [20, 150, 300, 194],
       block: [[152, 150, 128, 14]],
-      enter: s => { pts(s, 'aerie', 10); return once(s, 'seen_aerie', ['You reach the summit, wind howling. A nest the size of a cottage sits on the peak, and in it a fluffy chick as tall as you are, screeching for food.', 'High above, a vast golden bird circles. Its mother, presumably. She has noticed you.']); },
+      enter: s => { pts(s, 'aerie', 6); return once(s, 'seen_aerie', ['You reach the summit, wind howling. A nest the size of a cottage sits on the peak, and in it a fluffy chick as tall as you are, screeching for food.', 'High above, a vast golden bird circles. Its mother, presumably. She has noticed you.']); },
       spots: [
-        { id: 'down', name: 'stairs down', rect: [0, 120, 18, 80], at: [20, 172], exit: { to: 'sentbase', x: 110, y: 170 } },
+        { id: 'down', name: 'stairs down', rect: [0, 120, 18, 80], at: [20, 172], exit: { to: 'ledge', x: 272, y: 170 } },
         { id: 'nest', name: 'nest', rect: [150, 110, 130, 50], look: () => say('Woven from whole trees. Bones, shells, and a few golden feathers are tangled in it.') },
         {
           id: 'chick', name: 'roc chick', rect: [196, 90, 34, 34], at: [180, 170],
@@ -410,7 +421,7 @@
           hand: s => flag(s, 'fed') ? say('You pat the chick. It purrs, which you didn\'t know birds could do.') : { die: 'You reach out to pat the chick.\n\nThe chick decides you are food.\n\nIn fairness, you did walk right up to its plate.' },
           item: (s, i) => {
             if (i !== 'fish') return say('The chick sniffs it and screeches louder.');
-            lose(s, 'fish'); set(s, 'fed'); pts(s, 'feed', 5);
+            lose(s, 'fish'); set(s, 'fed'); pts(s, 'feed', 4);
             return say('You toss the fish. The chick snaps it out of the air and swallows it whole, then gives a contented burp.', 'With a rush of wind, the mother roc lands on the rocks beside the nest. She studies you with an eye the size of a cartwheel, then dips her head.');
           }
         },
@@ -419,7 +430,7 @@
           look: () => say('Golden feathers tangled in the nest, glowing faintly like morning light.'),
           hand: s => {
             if (!flag(s, 'fed')) return { die: 'You reach for a golden feather. The chick shrieks, "THIEF!" in bird.\n\nThe mother roc drops out of the sky like a thunderbolt and carries you off to a much smaller island, which is mostly beak.' };
-            gain(s, 'feather'); pts(s, 'feather', 10);
+            gain(s, 'feather'); pts(s, 'feather', 8);
             return say('The mother roc watches as you take a single golden feather. She doesn\'t object. A gift, for feeding her child.', 'It\'s warm, and glows like the first light of morning.');
           }
         },
@@ -439,6 +450,7 @@
       block: [[40, 168, 60, 18]],
       enter: s => once(s, 'seen_reef', ['A beach of pink coral sand. Rocks curl out into a turquoise lagoon. It is beautiful, and completely deserted.']),
       spots: [
+        { id: 'west', name: 'path to the tide pools', rect: [0, 120, 14, 80], at: [16, 170], exit: { to: 'tidepools', x: 294, y: 172 } },
         { id: 'boat', name: 'boat', rect: [250, 160, 70, 40], at: [236, 178], look: () => say('Your boat, waiting in the shallows.'), hand: boatFrom('reef'), walk: boatFrom('reef') },
         {
           id: 'lagoon', name: 'lagoon', rect: [0, 60, 320, 60], at: [120, 156],
@@ -447,7 +459,7 @@
           item: (s, i) => {
             if (i !== 'whistle') return null;
             if (flag(s, 'summoned')) return say('Nerissa is already here.');
-            set(s, 'summoned'); pts(s, 'summon', 5);
+            set(s, 'summoned'); pts(s, 'summon', 4);
             return say('You play the three notes across the water. The lagoon goes still, then bubbles, and a woman with a crown of coral and a long silver tail rises and settles onto the rock.', ['nerissa', 'That song has not been played in a hundred years. Who are you, to know it?']);
           }
         },
@@ -460,7 +472,7 @@
           item: (s, i) => {
             if (i === 'ring') {
               if (flag(s, 'got_mirror')) return say(['nerissa', 'Yes, yes, a stag. I remember.']);
-              set(s, 'got_mirror'); gain(s, 'mirror'); pts(s, 'mirror', 10);
+              set(s, 'got_mirror'); gain(s, 'mirror'); pts(s, 'mirror', 8);
               return say(['nerissa', 'The stag of Thornmere. An honest house.'], 'She dives, and returns with a shell polished to a perfect mirror.', ['nerissa', 'The pearl\'s magic cannot touch a true reflection. When Varrick casts at you, hold this up. What is cast at you, send home.']);
             }
             if (i === 'fish') return say(['nerissa', 'Those are my subjects.'], 'You put the fish away, embarrassed.');
@@ -471,11 +483,255 @@
       ]
     },
 
+    // ================= NEW SCREENS =================
+    inn: {
+      name: 'The Drowned Sailor', isle: 'crown',
+      walk: [20, 156, 300, 194],
+      enter: s => once(s, 'seen_inn', ['The Drowned Sailor is warm, smoky and nearly empty. Everyone else is pretending to rejoice at the castle. A bard slumps by the fire, glaring at his lute.']),
+      spots: [
+        { id: 'out', name: 'door to the square', rect: [0, 120, 16, 80], at: [20, 176], exit: { to: 'square', x: 107, y: 158 } },
+        {
+          id: 'marla', name: 'Marla', rect: [222, 82, 32, 48], at: [236, 172],
+          look: () => say('Marla the innkeeper: arms like a dockhand, apron like a battlefield.'),
+          talk: s => {
+            if (flag(s, 'got_bun')) return say(['marla', 'You\'ll want to watch yourself around the castle, love. Varrick keeps a hound in the servants\' halls. Big as a pony and twice as mean.']);
+            set(s, 'got_bun'); gain(s, 'bun'); pts(s, 'bun', 2);
+            return say(['marla', 'A shipwreck survivor! You look half drowned. Here, a sweet bun, on the house.'], ['marla', 'Rejoice at the wedding? I\'d sooner rejoice at a funeral. The old king was good to this town, and now Varrick says he\'s too ill for visitors. Ill, my foot.']);
+          },
+          hand: () => say(['marla', 'Hands where I can see them, sailor.']),
+          item: (s, i) => i === 'ring' ? say(['marla', 'Thornmere! The princess used to talk about a mirror and a prince. We all thought she was daydreaming.']) : i === 'coin' ? say(['marla', 'Keep your coin. Spend it on luck. The fountain likes coins.']) : say(['marla', 'I run an inn, not a pawnshop.'])
+        },
+        {
+          id: 'fennick', name: 'Fennick the bard', rect: [96, 108, 32, 52], at: [132, 170],
+          look: s => say(flag(s, 'strung') ? 'Fennick, happily tuning his newly strung lute.' : 'Fennick the bard, gloomy in a feathered cap. His lute is missing its highest string.'),
+          talk: s => flag(s, 'strung')
+            ? say(['fennick', 'Mind that lullaby. Sing it to anything with teeth and it\'ll be snoring before the second verse.'])
+            : say(['fennick', 'Snapped my silver string on a high note. The only thread fine enough to replace it is spider silk from the Mistwood, and I\'m not going near those spiders.'], ['fennick', 'Bring me some and I\'ll teach you a song worth knowing.']),
+          hand: () => say(['fennick', 'Careful! The lute is the only thing I own that\'s in tune.']),
+          item: (s, i) => {
+            if (i === 'thread') {
+              lose(s, 'thread'); gain(s, 'songsheet'); set(s, 'strung'); pts(s, 'song', 8);
+              return say('Fennick strings his lute with the spider silk. It shines like moonlight.', ['fennick', 'Perfect pitch! Listen to this.'], 'He plays the gentlest lullaby you have ever heard. Marla yawns. You yawn. A cat by the fire falls asleep mid-stretch.', ['fennick', 'The Lullaby of the Isles. My grandmother sang it to sea-serpents. Here, I\'ve written it out for you.']);
+            }
+            if (i === 'coin') return say(['fennick', 'A tip! Wonderful. But I\'d rather have a string.']);
+            return say(['fennick', 'That won\'t fix a lute.']);
+          }
+        },
+        { id: 'fire', name: 'fireplace', rect: [20, 70, 64, 74], look: () => say('A crackling fire. Above it hangs a painting of a very large fish that, according to the brass plaque, "GOT AWAY."') },
+        { id: 'patrons', name: 'patrons', rect: [150, 120, 60, 30], look: () => say('An old sailor snores into his mug. Another is building a ship out of breadsticks. Neither looks like they\'ll be rejoicing today.') }
+      ]
+    },
+
+    mistwood: {
+      outdoors: true,
+      name: 'The Mistwood', isle: 'mists', scale: [150, 0.86, 194, 1.03],
+      walk: [12, 150, 306, 194],
+      enter: s => once(s, 'seen_wood', ['Twisted trees crowd close, dripping with moss. Between two of them hangs an enormous web, shining with dew. Something large and many-legged sits at its center.']),
+      spots: [
+        { id: 'east', name: 'path to the shore', rect: [306, 120, 14, 80], at: [304, 170], exit: { to: 'mistshore', x: 20, y: 170 } },
+        {
+          id: 'weft', name: 'Madame Weft', rect: [150, 62, 34, 30],
+          look: () => say('A spider the size of a carriage wheel, with a dozen glittering eyes and, somehow, a lace collar.'),
+          talk: s => flag(s, 'got_thread')
+            ? say(['weft', 'Run along, little fly. And mind my web.'])
+            : say(['weft', 'Well, well. A fly that talks. How refreshing.'], ['weft', 'Silk, you say? I might spare a strand. My nights are so terribly dark in this wood. Bring me a little light and we shall bargain.']),
+          item: (s, i) => {
+            if (i === 'glowcap') {
+              lose(s, 'glowcap'); gain(s, 'thread'); set(s, 'got_thread'); pts(s, 'thread', 6);
+              return say('Madame Weft takes the glowcap delicately and sets it in the middle of her web like a lamp.', ['weft', 'Charming. A bargain is a bargain.'], 'She spins a single strand of silver silk and drops it into your hand. It is finer than hair and stronger than rope.');
+            }
+            if (i === 'lantern') return say(['weft', 'Fire? In a web? Are you mad?']);
+            return say(['weft', 'That is not light, little fly.']);
+          },
+          hand: () => ({ die: 'You reach up to touch the spider.\n\nMadame Weft is delighted. It isn\'t often lunch introduces itself.' })
+        },
+        {
+          id: 'web', name: 'web', rect: [112, 30, 100, 104], at: [162, 162],
+          look: () => say('Dew-pearled silk, strand after strand, each one shining like silver thread.'),
+          hand: () => ({ die: 'You reach out to pluck a strand of the web.\n\nThe web plucks back. You are now part of Madame Weft\'s collection, wrapped up snug for later.\n\nPerhaps she would have simply traded.' })
+        },
+        { id: 'trees', name: 'trees', rect: [0, 0, 100, 140], look: () => say('The trees are twisted into shapes that look almost like faces. Almost.') }
+      ]
+    },
+
+    gearworks: {
+      name: 'The Great Forge', isle: 'clocks',
+      walk: [16, 156, 304, 194],
+      enter: s => once(s, 'seen_forge', [flag(s, 'clock') ? 'The Great Forge roars. A huge brass automaton works the bellows, humming to itself.' : 'An enormous furnace, cold and silent. A brass automaton the size of a wardrobe stands frozen beside it, one hand on the bellows.']),
+      spots: [
+        { id: 'west', name: 'back to the workshop', rect: [0, 120, 16, 80], at: [18, 176], exit: { to: 'workshop', x: 290, y: 178 } },
+        {
+          id: 'anvil', name: 'Anvil', rect: [230, 98, 40, 64], at: [224, 174],
+          look: s => say(flag(s, 'clock') ? 'Anvil, the forge automaton, pumping the bellows in perfect time.' : 'A brass automaton, frozen mid-pump. A plate on its chest reads "ANVIL."'),
+          talk: s => flag(s, 'clock')
+            ? say(['anvil', 'GREETINGS. THE FORGE BURNS AGAIN. IF YOU REQUIRE TRUE FIRE, OFFER A VESSEL TO THE FLAMES.'])
+            : say('Anvil is frozen solid, like everything else on this island.'),
+          hand: s => flag(s, 'clock') ? say(['anvil', 'PLEASE DO NOT POLISH THE AUTOMATON DURING WORKING HOURS.']) : say('Cold brass.')
+        },
+        {
+          id: 'forge', name: 'great forge', rect: [116, 70, 108, 80], at: [170, 166],
+          look: s => say(flag(s, 'clock') ? 'The forge blazes white-gold. This is the true fire the stories talk about: it never goes out, and it burns only what it\'s told to.' : 'The furnace is cold. Ashes, but no ember.'),
+          hand: s => flag(s, 'clock') ? { die: 'You reach into the Great Forge.\n\nIt was very clear about burning only what it\'s told to. Nobody told it not to burn you.' } : say('Cold ash. It gets all over your sleeve.'),
+          item: (s, i) => {
+            if (i !== 'emptylantern') return i === 'lantern' ? say('Your lantern already holds an ember.') : null;
+            if (!flag(s, 'clock')) return say('The forge is cold. There\'s nothing to light it with.');
+            lose(s, 'emptylantern'); gain(s, 'lantern'); pts(s, 'forge', 6);
+            return say('You hold the empty lantern out to the forge.', ['anvil', 'VESSEL ACCEPTED.'], 'Anvil lifts a single living ember from the heart of the fire with brass tongs and drops it into your lantern. It burns steady and gold, and the brass stays cool in your hand.');
+          }
+        },
+        { id: 'bellows', name: 'bellows', rect: [270, 120, 40, 30], look: () => say('Bellows the size of a rowboat. Anvil works them without ever getting tired, which seems unfair.') }
+      ]
+    },
+
+    ledge: {
+      outdoors: true,
+      name: 'The Goat Ledge', isle: 'sentinels', scale: [160, 0.9, 182, 1.0],
+      walk: [40, 160, 280, 182],
+      enter: s => once(s, 'seen_ledge', ['Halfway up the spire, the stair narrows to a ledge barely wider than your boots. The sea is a very long way down. And blocking the ledge is a mountain goat, chewing thoughtfully and staring at you.']),
+      spots: [
+        { id: 'down', name: 'stair down', rect: [0, 120, 30, 80], at: [42, 172], exit: { to: 'sentbase', x: 120, y: 170 } },
+        {
+          id: 'up', name: 'stair up', rect: [292, 100, 28, 90], at: [278, 170],
+          look: () => say('The stair continues up toward the summit.'),
+          walk: s => flag(s, 'goat') ? { go: { to: 'aerie', x: 40, y: 172 } } : say('The goat is in the way. There is no way around a goat on a ledge this narrow.')
+        },
+        {
+          id: 'goat', name: 'mountain goat', rect: [184, 132, 40, 44], at: [170, 172], gone: s => flag(s, 'goat'),
+          look: () => say('A shaggy white goat with impressive horns and the expression of someone who has never once moved for anybody.'),
+          talk: () => say(['rowan', 'Excuse me. Could I just squeeze past?'], 'The goat chews. The goat stares. The goat does not move.'),
+          hand: () => ({ die: 'You try to shove the goat out of the way.\n\nThe goat tries to shove you out of the way.\n\nThe goat is better at it.' }),
+          item: (s, i) => {
+            if (i === 'bun') { lose(s, 'bun'); set(s, 'goat'); pts(s, 'goat', 5); return say('You hold out Marla\'s sweet bun. The goat sniffs it, snatches it, and trots happily up onto a rock above the ledge to eat it in peace.', 'The way is clear.'); }
+            if (i === 'fish') return say('The goat looks deeply offended.');
+            return say('The goat isn\'t interested. The goat has standards, and they involve pastry.');
+          }
+        },
+        { id: 'goatrock', name: 'goat', rect: [196, 96, 36, 30], gone: s => !flag(s, 'goat'), look: () => say('The goat, perched on a rock, enjoying the bun far more than you did.') },
+        { id: 'drop', name: 'drop', rect: [40, 182, 240, 18], look: () => say('Don\'t look down. You looked down. Why did you look down?') }
+      ]
+    },
+
+    tidepools: {
+      outdoors: true,
+      name: 'The Tide Pools', isle: 'reef', scale: [150, 0.86, 194, 1.03],
+      walk: [14, 150, 306, 194],
+      block: [[56, 166, 72, 22]],
+      spots: [
+        { id: 'east', name: 'back to the strand', rect: [306, 120, 14, 80], at: [304, 170], exit: { to: 'reef', x: 24, y: 172 } },
+        {
+          id: 'octopus', name: 'baby octopus', rect: [150, 166, 28, 18], at: [186, 178], gone: s => flag(s, 'octo'),
+          look: () => say('A tiny purple octopus, stranded on the sand by the tide. It\'s drying out fast and looks very sorry for itself.'),
+          talk: () => say(['rowan', 'Hang on, little fellow.'], 'It waves one tentacle feebly.'),
+          hand: s => { set(s, 'octo'); pts(s, 'octo', 3); return say('You scoop up the little octopus and carry it to the nearest pool. It turns a happy shade of pink, squirts you in the face, and vanishes under a rock.', 'Ungrateful, but alive.'); }
+        },
+        { id: 'pools', name: 'tide pools', rect: [56, 160, 72, 30], look: () => say('Pools full of anemones, starfish and darting fish, all glowing faintly.') },
+        { id: 'arch', name: 'rock arch', rect: [200, 50, 110, 90], look: () => say('A great arch of coral rock. Waves boom through it every few seconds.') }
+      ]
+    },
+
+    corridor: {
+      name: 'Servants\' Hall', isle: 'crown',
+      walk: [16, 156, 304, 194],
+      enter: s => once(s, 'seen_corr', flag(s, 'hound') ? null : ['A long stone hallway lit by torches. Doors lead off it, and at the far end an archway glows with light. In the middle of the floor lies a hound the size of a pony. It lifts its head and growls, low and long.']),
+      spots: [
+        { id: 'down', name: 'cellar stairs', rect: [0, 120, 16, 80], at: [18, 176], exit: { to: 'cellar', x: 266, y: 164 } },
+        { id: 'kitchen', name: 'kitchen door', rect: [66, 78, 40, 76], at: [86, 162], walk: s => houndCheck(s, { to: 'kitchen', x: 30, y: 178 }), look: () => say('A door that smells of baking. Clattering pans behind it.') },
+        { id: 'study', name: 'study door', rect: [176, 78, 40, 76], at: [196, 162], walk: s => houndCheck(s, flag(s, 'unlocked') ? { to: 'study', x: 30, y: 178 } : null), look: s => say(flag(s, 'unlocked') ? 'The door to Varrick\'s study, unlocked.' : 'A black door with a silver lock. A brass plate reads: "THE GRAND STEWARD. KNOCK AND REGRET IT."'),
+          item: (s, i) => { if (i !== 'keys') return null; if (!flag(s, 'hound')) return houndCheck(s, null); if (flag(s, 'unlocked')) return say('It\'s already unlocked.'); set(s, 'unlocked'); return say('The third key you try turns with a satisfying click. The study door swings open.'); } },
+        { id: 'arch', name: 'archway to the gallery', rect: [302, 100, 18, 100], at: [302, 176], walk: s => houndCheck(s, { to: 'gallery', x: 26, y: 178 }) },
+        {
+          id: 'hound', name: 'hound', rect: [124, 154, 56, 26],
+          look: s => say(flag(s, 'hound') ? 'Varrick\'s hound, snoring like a landslide.' : 'A huge black hound with a spiked collar, watching your every move. Its growl never quite stops.'),
+          talk: s => flag(s, 'hound') ? say('You whisper "good boy." It snores contentedly.') : say(['rowan', 'Good boy?'], 'The hound\'s growl gets louder. Not a good boy, apparently.'),
+          hand: s => flag(s, 'hound') ? say('You don\'t pat sleeping hounds. Especially this one.') : { die: 'You reach out to pat the hound.\n\nThe hound reaches out to pat you, with its teeth.\n\nMarla did warn you.' },
+          item: (s, i) => {
+            if (i === 'songsheet') {
+              if (flag(s, 'hound')) return say('It\'s already asleep.');
+              set(s, 'hound'); pts(s, 'hound', 8);
+              return say('You unfold Fennick\'s song sheet and, very quietly, sing the Lullaby of the Isles.', 'The hound\'s ears droop. Its eyes droop. Its whole enormous body droops. By the second verse it is flat on its side, snoring like a landslide.');
+            }
+            if (i === 'fish' || i === 'bun') return say('The hound isn\'t hungry. It\'s guarding. Big difference.');
+            return { die: 'You wave it at the hound.\n\nThe hound takes this personally.' };
+          }
+        }
+      ]
+    },
+
+    kitchen: {
+      name: 'Castle Kitchen', isle: 'crown',
+      walk: [20, 156, 300, 194],
+      enter: s => once(s, 'seen_kitchen', ['The castle kitchen is chaos: copper pots, steaming cauldrons, and one red-faced cook shouting at a pudding.']),
+      spots: [
+        { id: 'out', name: 'door to the hall', rect: [0, 120, 18, 80], at: [22, 178], exit: { to: 'corridor', x: 86, y: 166 } },
+        {
+          id: 'bertha', name: 'Bertha the cook', rect: [184, 106, 34, 58], at: [176, 176],
+          look: () => say('Bertha the cook: flour to the elbows and a wooden spoon held like a sword.'),
+          talk: s => flag(s, 'got_tabard')
+            ? say(['bertha', 'Go on, then! Stand up straight. Servants slouch, but not that much.'])
+            : say(['bertha', 'Out! Out of my kitchen! I\'ve a wedding cake to finish for a wedding I want no part of.'], ['bertha', 'Wait. You\'re not one of Varrick\'s lot. Who are you, then?']),
+          hand: () => say(['bertha', 'Touch me and you\'ll be wearing this spoon.']),
+          item: (s, i) => {
+            if (i === 'ring') {
+              if (flag(s, 'got_tabard')) return say(['bertha', 'Yes, yes, a stag. Go!']);
+              set(s, 'got_tabard'); gain(s, 'tabard'); pts(s, 'tabard', 6);
+              return say(['bertha', 'The stag of Thornmere! The princess talked of nothing else for a week. The prince in the mirror!'], ['bertha', 'If you mean to stop this wedding, you\'ll never get past the guards at the Great Hall dressed like a drowned rat. Here, a servant\'s tabard. Put it on and keep your head down.']);
+            }
+            if (i === 'fish') return say(['bertha', 'Fish? At a wedding? Over my dead body. Well. Over Varrick\'s, preferably.']);
+            return say(['bertha', 'I\'ve no use for that.']);
+          }
+        },
+        { id: 'cake', name: 'wedding cake', rect: [96, 104, 50, 46], look: () => say('Seven tiers of sea-green icing, topped with tiny sugar figures of Varrick and Elowen. Someone has bitten the head off the sugar Varrick.'), hand: () => say(['bertha', 'Touch that cake and I\'ll bake you into the next one.']) },
+        { id: 'hearth', name: 'hearth', rect: [232, 60, 80, 90], look: () => say('A huge hearth with a whole boar turning on a spit. It smells wonderful. You haven\'t eaten since the shipwreck.') },
+        { id: 'pots', name: 'pots', rect: [20, 30, 140, 40], look: () => say('Copper pots, enough to cook for an army. Or for a wedding nobody wants.') }
+      ]
+    },
+
+    study: {
+      name: 'Varrick\'s Study', isle: 'crown',
+      walk: [20, 160, 300, 194],
+      enter: s => once(s, 'seen_study', ['Varrick\'s study: black curtains, a desk piled with papers, and shelves of books with titles like "On Persuasion" and "Sleep, Eternal." A raven watches you from a perch.']),
+      spots: [
+        { id: 'out', name: 'door', rect: [0, 120, 18, 80], at: [22, 178], exit: { to: 'corridor', x: 196, y: 166 } },
+        {
+          id: 'desk', name: 'desk', rect: [128, 108, 94, 44], at: [174, 170],
+          look: s => say(flag(s, 'letter_found') ? 'The desk, its drawer hanging open where you found the letter.' : 'A heavy desk with one drawer. The papers on top are all decrees for Varrick to sign.'),
+          hand: s => {
+            if (flag(s, 'letter_found')) return say('The drawer is empty now.');
+            set(s, 'letter_found'); gain(s, 'letter'); pts(s, 'letter', 8);
+            return say('You slide open the drawer. Under a stack of blank decrees is a folded letter in Varrick\'s own hand. You read it, and your jaw tightens.', 'The king isn\'t dead. And here is the proof.');
+          }
+        },
+        { id: 'raven', name: 'raven', rect: [36, 44, 32, 40], look: () => say('A glossy black raven with a silver ring on one leg. It watches you with one eye, then the other.'), talk: () => say('"STEWARD," croaks the raven. "STEWARD. STEWARD. SNACK?"'), hand: () => say('The raven pecks your knuckles. Fair enough.') },
+        { id: 'books', name: 'bookshelves', rect: [228, 30, 80, 110], look: () => say('"On Persuasion." "Sleep, Eternal." "Pearls of the Deep, and How to Steal Them." Varrick\'s reading list explains a lot.') },
+        { id: 'portrait', name: 'portrait', rect: [120, 20, 60, 70], look: () => say('A portrait of Varrick in a crown he has not got. Yet. The painter seems to have been nervous.') }
+      ]
+    },
+
+    gallery: {
+      name: 'The Long Gallery', isle: 'crown',
+      walk: [16, 160, 304, 194],
+      enter: s => once(s, 'seen_gallery', ['A long gallery hung with portraits of kings and queens. At the far end, two guards flank the great double doors of the Great Hall. Music drifts through them.']),
+      spots: [
+        { id: 'back', name: 'archway', rect: [0, 120, 16, 80], at: [18, 178], exit: { to: 'corridor', x: 296, y: 176 } },
+        {
+          id: 'doors', name: 'doors to the Great Hall', rect: [232, 60, 66, 100], at: [252, 176],
+          look: () => say('Great carved doors, slightly ajar. Wedding music seeps through.'),
+          walk: s => {
+            if (!has(s, 'tabard')) return { die: 'You stroll toward the doors of the Great Hall.\n\n"Halt! Who are you?" The guards take one look at your salt-stained clothes and drag you to the dungeon.\n\nPerhaps you should have dressed for the occasion.' };
+            pts(s, 'gallery', 4);
+            return { say: ['You straighten your servant\'s tabard, lower your eyes and stride toward the doors like you belong there. The guards barely glance at you.'], go: { to: 'hall', x: 30, y: 180 } };
+          }
+        },
+        { id: 'guards', name: 'guards', rect: [212, 92, 104, 72], look: s => say(has(s, 'tabard') ? 'Two bored guards. In your tabard, you\'re just another servant to them.' : 'Two guards, eyeing you suspiciously.'), talk: () => say(['guard', 'Move along. Ceremony\'s started.']) },
+        { id: 'kings', name: 'portraits', rect: [30, 30, 180, 80], look: () => say('Kings and queens of the Tidewater Isles. The last portrait shows King Aldous: white-bearded, smiling, holding a little copper-haired girl on his knee.') }
+      ]
+    },
+
     // ================= THE CASTLE =================
     tunnel: {
       name: "Smugglers' Tunnel", isle: 'crown',
       walk: [16, 152, 256, 190],
-      enter: s => { pts(s, 'tunnel', 5); return once(s, 'seen_tunnel', ['Your light shows a narrow tunnel. Just ahead, a crack in the floor drops into nothing at all. Good thing you brought a light.']); },
+      enter: s => { pts(s, 'tunnel', 3); return once(s, 'seen_tunnel', ['Your light shows a narrow tunnel. Just ahead, a crack in the floor drops into nothing at all. Good thing you brought a light.']); },
       spots: [
         { id: 'back', name: 'way out to the cliffs', rect: [0, 120, 16, 80], at: [16, 172], exit: { to: 'cliffs', x: 225, y: 152 } },
         { id: 'stairs', name: 'stairs up', rect: [258, 56, 50, 100], at: [256, 160], exit: { to: 'cellar', x: 30, y: 176 } },
@@ -490,16 +746,17 @@
       block: [[220, 154, 42, 10]],
       spots: [
         { id: 'back', name: 'tunnel', rect: [0, 120, 16, 80], at: [16, 176], exit: { to: 'tunnel', x: 248, y: 162 } },
-        { id: 'stairs', name: 'stairs up', rect: [278, 30, 42, 120], at: [274, 160], exit: { to: 'hall', x: 30, y: 180 } },
+        { id: 'stairs', name: 'stairs up', rect: [278, 30, 42, 120], at: [274, 160], exit: { to: 'corridor', x: 30, y: 176 } },
         { id: 'barrels', name: 'wine barrels', rect: [20, 92, 70, 56], look: () => say('Barrels of wedding wine. The Steward has spared no expense, mostly because it isn\'t his money.'), hand: () => say('Now is not the time to get drunk. Probably.') },
         {
           id: 'stone', name: 'loose stone', rect: [134, 86, 26, 20], at: [148, 160],
-          look: s => say(flag(s, 'letter_found') ? 'An empty hole where the loose stone was.' : 'One stone in the wall sits a little crooked, with fresh scratches around its edges.'),
-          hand: s => {
-            if (flag(s, 'letter_found')) return say('The hiding place is empty now.');
-            set(s, 'letter_found'); gain(s, 'letter'); pts(s, 'letter', 10);
-            return say('You wiggle the stone loose. Behind it is a folded letter sealed with the Steward\'s seal. You read it, and your jaw tightens.', 'The king isn\'t dead. And here is the proof, in Varrick\'s own hand.');
-          }
+          look: s => say(flag(s, 'coin_found') ? 'An empty hole where the loose stone was.' : 'One stone in the wall sits a little crooked. Smugglers used to hide things in walls like this.'),
+          hand: s => { if (flag(s, 'coin_found')) return say('The hiding place is empty now.'); set(s, 'coin_found'); gain(s, 'coin'); return say('You wiggle the stone loose. Behind it, some long-gone smuggler left a single gold coin. Finders keepers.'); }
+        },
+        {
+          id: 'keys', name: 'key ring', rect: [232, 136, 16, 12], at: [240, 170], gone: s => flag(s, 'got_keys'),
+          look: () => say('A big ring of keys hanging from the sleeping guard\'s belt.'),
+          hand: s => { set(s, 'got_keys'); gain(s, 'keys'); pts(s, 'keys', 6); return say('Holding your breath, you ease the key ring off the guard\'s belt, one jingle-free inch at a time.', 'He snorts, mutters "more cake," and goes on snoring.'); }
         },
         {
           id: 'guard', name: 'sleeping guard', rect: [214, 116, 46, 46],
@@ -518,7 +775,7 @@
         'Nobody has noticed you yet. You won\'t get long once they do.'
       ]),
       spots: [
-        { id: 'down', name: 'cellar stairs', rect: [0, 120, 16, 80], at: [16, 180], exit: { to: 'cellar', x: 266, y: 164 } },
+        { id: 'down', name: 'doors to the gallery', rect: [0, 120, 16, 80], at: [16, 180], exit: { to: 'gallery', x: 200, y: 178 } },
         {
           id: 'varrick', name: 'Grand Steward Varrick', rect: [126, 92, 26, 60], at: [138, 170],
           look: () => say('Varrick: tall, thin, dressed in black on his own wedding day, with a smile like a crack in ice. The black pearl at his throat seems to drink the candlelight.'),
@@ -534,7 +791,7 @@
           talk: s => flag(s, 'trust') ? say(['elowen', 'Captain Orla commands the guard. If you have proof, give it to her.']) : say('You whisper her name. She turns slightly, but who would trust a soggy stranger at her own wedding?'),
           hand: () => say('Grabbing the bride in front of fifty guards is not the romantic gesture it sounds like.'),
           item: (s, i) => {
-            if (i === 'ring') { set(s, 'trust'); pts(s, 'trust', 10); return say('You hold up your signet ring. Elowen catches her breath and lifts her veil. For a moment, the dull look in her eyes clears.', ['elowen', 'The leaping stag... I saw you. In the mirror, a month ago. You\'re real.'], ['elowen', 'He\'s done something to me. I can\'t think straight. Captain Orla commands the guard. If you have proof, give it to her.']); }
+            if (i === 'ring') { set(s, 'trust'); pts(s, 'trust', 8); return say('You hold up your signet ring. Elowen catches her breath and lifts her veil. For a moment, the dull look in her eyes clears.', ['elowen', 'The leaping stag... I saw you. In the mirror, a month ago. You\'re real.'], ['elowen', 'He\'s done something to me. I can\'t think straight. Captain Orla commands the guard. If you have proof, give it to her.']); }
             if (i === 'letter') return say(['elowen', 'Give it to Orla. The guard obeys her, not me. Not today.']);
             return say('Elowen gives you a puzzled look.');
           }
@@ -546,7 +803,7 @@
           item: (s, i) => {
             if (i === 'letter') {
               if (!flag(s, 'trust')) return say(['orla', 'A forged scrap from a stranger who sneaked into the castle? Nice try.'], 'She doesn\'t even read it. You need someone she trusts to vouch for you.');
-              lose(s, 'letter'); set(s, 'unmasked'); pts(s, 'unmask', 10);
+              lose(s, 'letter'); set(s, 'unmasked'); pts(s, 'unmask', 8);
               return {
                 say: [
                   'Orla reads the letter. Her face goes from grey to red to a very dangerous white.',
@@ -583,7 +840,7 @@
           hand: () => ({ die: 'You charge Varrick. He flicks a finger, and you become a very surprised-looking sea urchin.\n\nWhat is cast at you, someone once said, send home.' }),
           item: (s, i) => {
             if (i === 'mirror') {
-              set(s, 'beaten'); pts(s, 'defeat', 20);
+              set(s, 'beaten'); pts(s, 'defeat', 15);
               return say('Varrick hurls a bolt of black lightning. You raise the mirror shell.', 'The bolt strikes the shell, rebounds, and slams into the black pearl at Varrick\'s throat. The pearl cracks, then shatters with a sound like breaking ice.', ['varrick', 'No... NO!'], 'Varrick shrinks, and shrinks, and when the light fades there is nothing on the floor but a small, furious crab, clicking at you.', 'The black cage around Elowen dissolves. She stumbles into your arms.');
             }
             return { die: 'You hold it up at Varrick. He seems unimpressed. The bolt of black lightning is the last thing you see.\n\nWhat is cast at you, someone once said, send home.' };
@@ -606,7 +863,7 @@
           item: (s, i) => {
             if (i !== 'feather') return null;
             if (!flag(s, 'beaten')) return say('Varrick\'s magic crackles between you and the bier. Deal with the sorcerer first.');
-            lose(s, 'feather'); s.won = 'long'; pts(s, 'king', 20);
+            lose(s, 'feather'); s.won = 'long'; pts(s, 'king', 15);
             return { say: [
               'You lay the Feather of Dawn on the sleeping king\'s chest. Golden light spills out of it like sunrise. The dark threads around him burn away.',
               'Outside, the storm clouds tear open, and real sunlight floods the tower.',
@@ -624,8 +881,13 @@
 
   function lightLamp(s) {
     if (flag(s, 'lit')) return say('The lamp is already blazing.');
-    lose(s, 'lantern'); set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); pts(s, 'lit', 15); pts(s, 'compass', 5);
-    return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], ['hester', 'I promised anything I own. Take my magic map. My grandmother had it off a sea-witch. Touch an island on it, under open sky, and it\'ll carry you there.'], 'You can now use the magic map from any outdoor screen. Look for the map button on your icon bar.');
+    set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); pts(s, 'lit', 10); pts(s, 'compass', 4);
+    return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], 'She hands the lantern back. A spark was all the great lamp needed.', ['hester', 'I promised anything I own. Take my magic map. My grandmother had it off a sea-witch. Touch an island on it, under open sky, and it\'ll carry you there.'], 'You can now use the magic map from any outdoor screen. Look for the map button on your icon bar.');
+  }
+
+  function houndCheck(s, go) {
+    if (!flag(s, 'hound')) return { die: 'You try to slip past the hound.\n\nYou do not slip past the hound.\n\nSomewhere, Marla is shaking her head.' };
+    return go ? { go } : say('The study door is locked tight.');
   }
 
   function sentinelAsk(s, who) {
@@ -634,7 +896,7 @@
   }
 
   function climb(s, side) {
-    if (side === s.flags.safe) return { say: ['You climb the ' + side + ' stair. It winds up and up around the spire, solid as the island itself.'], go: { to: 'aerie', x: 40, y: 172 } };
+    if (side === s.flags.safe) return { say: ['You climb the ' + side + ' stair. It winds up and up around the spire, solid as the island itself.'], go: { to: 'ledge', x: 44, y: 172 } };
     return { die: 'You climb the ' + side + ' stair. Halfway up, the step under your foot crumbles to dust, and then the next, and then all of them.\n\nFrom below, faintly, you hear one of the sentinels laughing.' };
   }
 
@@ -656,7 +918,7 @@
       const liar = s.flags.liar === who, safe = s.flags.safe, unsafe = safe === 'left' ? 'right' : 'left', other = who === 'granite' ? 'BASALT' : 'GRANITE';
       if (o === 'safe') return say([who, `THE ${liar ? unsafe.toUpperCase() : safe.toUpperCase()} STAIR IS SAFE.`]);
       if (o === 'liar') return say([who, `${other} IS THE LIAR.`], 'Well, that was a waste of a question.');
-      pts(s, 'sentq', 5);
+      pts(s, 'sentq', 4);
       return say([who, `${other} WOULD SAY THE ${unsafe.toUpperCase()} STAIR.`], 'A clever question. Whichever one is lying, the answer points at the wrong stair.');
     };
   }
@@ -676,7 +938,14 @@
     compass: { hand: () => ({ map: true }), talk: () => say('The ink on the map ripples, as if waiting for you to choose.') },
     feather: { hand: () => say('The feather is warm as sunlight. Holding it, you feel like getting up early, which is a first.'), talk: () => say('It glows a little brighter. Dawn breaks spells cast in the dark, the stories say.') },
     mirror: { hand: () => say('You look into the mirror shell. You look terrible. Shipwrecks will do that.'), talk: () => say(['rowan', 'What is cast at you, send home.'], 'The mirror shell seems to hum.') },
-    letter: { hand: () => say(ITEMS.letter.desc) }
+    letter: { hand: () => say(ITEMS.letter.desc) },
+    emptylantern: { hand: () => say('Cold, empty and brass. It wants fire.') },
+    bun: { hand: () => say('It\'s sticky. You lick your fingers. You do not eat the bun. Willpower!'), talk: () => say('You promise the bun you\'ll find it a good home.') },
+    thread: { hand: () => say('You tug it. It doesn\'t break. You tug harder. It still doesn\'t break. Your finger, on the other hand, is not happy.') },
+    songsheet: { hand: () => say('You hum the lullaby under your breath, very quietly. Even that makes your eyelids heavy.'), talk: () => say('You\'d better save the singing for something with teeth.') },
+    keys: { hand: () => say('A dozen keys. Pantry, armory, privy... and one black key with a silver bow. That one looks important.') },
+    coin: { hand: () => say('You flip it. Skulls. Of course it\'s skulls.') },
+    tabard: { hand: () => say('You smooth down the tabard. You look exactly like a servant. Your father would be horrified.') }
   };
   const COMBOS = {
     'oilcan+ring': 'Now your ring is shiny AND slippery. That seems like a mistake.',
@@ -684,7 +953,10 @@
     'feather+mirror': 'The feather\'s reflection glows twice as bright. Pretty, but it doesn\'t change anything.',
     'fish+lantern': 'You are not cooking the roc\'s lunch.',
     'bottle+oilcan': 'You oil the cork. It\'s still stuck, just slicker.',
-    'conch+whistle': 'You whistle into the conch. It whistles back, sort of.'
+    'conch+whistle': 'You whistle into the conch. It whistles back, sort of.',
+    'bun+fish': 'Fish bun. No. Absolutely not.',
+    'songsheet+whistle': 'The lullaby doesn\'t fit in three notes. Fennick would be appalled.',
+    'emptylantern+glowcap': 'The glowcap won\'t fit in the lantern, and it\'s not true fire anyway.'
   };
   function invAct(s, id, verb, other) {
     if (!has(s, id)) return {};
@@ -704,20 +976,29 @@
     const f = k => flag(s, k), h = i => has(s, i);
     if (!f('ring_taken') || !f('bottle_taken') || !f('conch_taken')) return H('What should I do on the beach?', 'Shipwrecks leave things behind. So does the tide.', 'Use the Hand on the wreckage, the bottle and the conch shell to pick them all up.');
     if (!f('traded')) return H('How do I get off this island?', 'Someone in the village buys what the sea brings, especially secrets.', 'Give the corked bottle to Old Bram in the curio shop. He\'ll give you a ferry token.');
+    if (!f('got_bun')) return H('Is there anywhere else to visit in the village?', 'Every village has an inn.', 'Visit the Drowned Sailor in the square and talk to Marla. Talk to Fennick the bard too.');
     if (!f('paid')) return H('What is the ferry token for?', 'Ferries need paying.', 'Use the ferry token on the ferrywoman at the docks.');
     if (!f('got_whistle')) return H('What do I do on the Isle of Mists?', 'The conch keeps whispering about someone. Also: don\'t follow strange lights.', 'Go into the grotto and give the conch shell to the Oracle. Pick a glowcap on the shore while you\'re there.');
-    if (!h('glowcap') && !h('lantern') && !f('door_open')) return H('Should I take anything from the Isle of Mists?', 'Tunnels are dark.', 'Pick a glowing mushroom on the Isle of Mists shore.');
+    if (!f('got_thread')) return H('Fennick needs spider silk. Where do I find it?', 'The Mistwood is west of the Isle of Mists shore. Spiders like light in a dark wood.', 'Give a glowcap from the Mists shore to Madame Weft in the Mistwood. Don\'t touch her or her web.');
+    if (!f('strung')) return H('What do I do with the spider silk?', 'A bard with a broken string.', 'Give the spider silk to Fennick at the Drowned Sailor. He\'ll give you a song sheet.');
     if (!h('oilcan') && !f('clock')) return H('Why is everyone frozen on the Isle of Clocks?', 'One person in town is still moving. He keeps his own clocks.', 'Talk to Pim in his workshop. He\'ll give you an oil can.');
     if (!f('clock')) return H('How do I fix the clock?', 'The great gear is stuck.', 'Go into the clock tower and use the oil can on the great gear.');
-    if (!f('got_lantern')) return H('The clock is running. Now what?', 'Pim will want to thank you.', 'Go back to Pim and talk to him. He\'ll give you a forge lantern. Talk to the fishmonger, too.');
+    if (!f('got_lantern')) return H('The clock is running. Now what?', 'Pim will want to thank you.', 'Go back to Pim and talk to him.');
+    if (h('emptylantern')) return H('What is the empty lantern for?', 'True fire comes from the Great Forge, through Pim\'s back door.', 'Go through Pim\'s back door to the Great Forge and use the empty lantern on the forge.');
     if (!f('got_fish')) return H('Is there anything else on the Isle of Clocks?', 'The town is moving again. Someone has fish to give away.', 'Talk to the fishmonger in the harbor. He\'ll give you a fish.');
     if (!f('lit')) return H('What is the forge lantern for?', 'Who has been asking for true fire?', 'Take the docks path south to the lighthouse and give the lantern to Hester. She\'ll give you the magic map.');
-    if (!h('feather') && !f('pts_aerie')) return H('How do I get past the sentinels?', 'Ask a question whose answer is a lie either way.', 'Ask either sentinel what the OTHER one would say. Then climb the opposite stair.');
+    if (!f('pts_aerie')) {
+      if (!f('pts_sentq') && s.room !== 'ledge') return H('How do I get past the sentinels?', 'Ask a question whose answer is a lie either way.', 'Ask either sentinel what the OTHER one would say. Then climb the opposite stair.');
+      if (!f('goat')) return H('How do I get past the goat?', 'The goat has standards, and they involve pastry.', 'Give Marla\'s sweet bun to the goat.');
+    }
     if (!f('fed')) return H('How do I deal with the roc?', 'Hungry babies make angry mothers.', 'Give the silver fish to the roc chick.');
     if (!h('feather') && !f('pts_feather')) return H('Now what at the aerie?', 'The mother roc approves of you now.', 'Use the Hand on the golden feathers in the nest.');
     if (!f('got_mirror')) return H('What do I do on the Coral Strand?', 'The guidebook says the mer-folk answer only to music.', 'Use the silver whistle on the lagoon. Then show Queen Nerissa your signet ring.');
-    if (!f('door_open')) return H('How do I get into the castle?', 'The Oracle mentioned a door that opens to a song.', 'Use the silver whistle on the carved door at the Singing Cliffs.');
-    if (!f('letter_found')) return H('What should I do in the cellar?', 'Something in the wall doesn\'t quite fit. And let sleeping guards lie.', 'Use the Hand on the loose stone in the cellar wall. Don\'t touch or talk to the guard.');
+    if (!f('door_open')) return H('How do I get into the castle?', 'The Oracle mentioned a door that opens to a song.', 'Use the silver whistle on the carved door at the Singing Cliffs. You\'ll need a light inside.');
+    if (!f('got_keys')) return H('What should I do in the cellar?', 'The guard is asleep. His belt isn\'t guarded.', 'Use the Hand on the key ring at the sleeping guard\'s belt. Don\'t touch or talk to the guard himself.');
+    if (!f('hound')) return H('How do I get past the hound?', 'Fennick said to sing it to anything with teeth.', 'Use the song sheet on the hound.');
+    if (!f('letter_found')) return H('Where is the proof of Varrick\'s plot?', 'A steward keeps his secrets in his study. You have his guard\'s keys.', 'Use the key ring on the study door, go in, and use the Hand on the desk.');
+    if (!h('tabard') && !f('pts_gallery')) return H('How do I get into the Great Hall?', 'The guards won\'t let a drowned rat through. Someone in the kitchen hates this wedding.', 'Show your signet ring to Bertha in the kitchen. She\'ll give you a servant\'s tabard.');
     if (!f('trust')) return H('Nobody believes me in the Great Hall!', 'Elowen saw you once, in a mirror. Remind her.', 'Show your signet ring to Elowen.');
     if (!f('unmasked')) return H('How do I stop the wedding?', 'The guard obeys its captain.', 'Give Varrick\'s letter to Captain Orla.');
     if (!f('beaten')) return H('How do I beat Varrick?', 'What is cast at you, send home.', 'Use the mirror shell on Varrick.');

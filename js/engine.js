@@ -44,7 +44,8 @@
     const r = s.room;
     if (s.won) return 'title';
     if (r === 'tower') return s.flags.beaten ? 'reef' : 'tower';
-    if (['tunnel', 'cellar', 'hall'].includes(r)) return 'castle';
+    if (['tunnel', 'cellar', 'hall', 'corridor', 'kitchen', 'study', 'gallery'].includes(r)) return 'castle';
+    if (r === 'inn') return 'inn';
     return G.ROOMS[r].isle;
   };
 
@@ -53,7 +54,7 @@
   const updateScore = () => { $('score').textContent = `Score: ${s.score} of ${G.MAX_SCORE}`; };
 
   // ---------- messages with talker portraits ----------
-  const SPEAKER = { rowan: 'Rowan', bram: 'Old Bram', nell: 'Ferrywoman', oracle: 'The Oracle', pim: 'Pim', hester: 'Hester', fishmonger: 'Fishmonger', guard: 'Guard', granite: 'Granite', basalt: 'Basalt', nerissa: 'Queen Nerissa', elowen: 'Elowen', orla: 'Captain Orla', varrick: 'Varrick', king: 'King Aldous' };
+  const SPEAKER = { rowan: 'Rowan', bram: 'Old Bram', nell: 'Ferrywoman', oracle: 'The Oracle', pim: 'Pim', hester: 'Hester', fishmonger: 'Fishmonger', guard: 'Guard', granite: 'Granite', basalt: 'Basalt', nerissa: 'Queen Nerissa', elowen: 'Elowen', orla: 'Captain Orla', varrick: 'Varrick', king: 'King Aldous', marla: 'Marla', fennick: 'Fennick', weft: 'Madame Weft', anvil: 'Anvil', bertha: 'Bertha' };
   function showMsgs(lines, then) {
     if (!lines || !lines.length) { if (then) then(); return; }
     queue = lines.slice(); afterMsgs = then || null; nextMsg();
@@ -176,7 +177,16 @@
     tunnel: 'A cramped, damp smugglers\' tunnel. Mind your step.',
     cellar: 'The castle cellar, full of barrels and one snoring guard.',
     hall: 'The Great Hall, dressed for a wedding nobody seems happy about.',
-    tower: 'The top of the tallest tower.'
+    tower: 'The top of the tallest tower.',
+    inn: 'The Drowned Sailor: low beams, a roaring fire and almost no customers.',
+    mistwood: 'A dark, dripping wood. Something in the web is watching you.',
+    gearworks: 'The Great Forge of the Clockmakers.',
+    ledge: 'A narrow ledge halfway up the spire. The wind is trying very hard to make friends.',
+    tidepools: 'Tide pools beneath a great coral arch.',
+    corridor: 'A torchlit servants\' hall deep inside the castle.',
+    kitchen: 'The castle kitchen, hot and loud and smelling of roast boar.',
+    study: 'The Grand Steward\'s private study.',
+    gallery: 'A long gallery of royal portraits, ending at the doors of the Great Hall.'
   };
 
   // ---------- icon bar + cursors ----------

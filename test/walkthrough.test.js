@@ -17,25 +17,35 @@ function fresh() { const s = G.newState(); G.enter(s, { to: 'beach', x: 160, y: 
 function toTower(s) {
   play(s, [
     ['wreck', 'hand'], ['bottle', 'hand'], ['conch', 'hand'], ['east', 'walk'], ['board', 'look'], ['shop', 'walk'],
-    ['bram', 'item', 'bottle'], ['door', 'walk'], ['south', 'walk'], ['nell', 'item', 'token'],
+    ['bram', 'item', 'bottle'], ['door', 'walk'], ['inn', 'walk'], ['marla', 'talk'], ['fennick', 'talk'], ['out', 'walk'],
+    ['south', 'walk'], ['nell', 'item', 'token'],
     ['boat', 'walk'], ['@choose', 'ferry', 'mists'],
     ['glowcaps', 'hand'], ['cave', 'walk'], ['sibyl', 'talk'], ['sibyl', 'item', 'conch'], ['out', 'walk'],
-    ['boat', 'walk'], ['boat', 'walk'], ['@choose', 'ferry', 'clocks'],
+    ['west', 'walk'], ['weft', 'item', 'glowcap'], ['east', 'walk'],
+    ['boat', 'walk'], ['west', 'walk'], ['inn', 'walk'], ['fennick', 'item', 'thread'], ['out', 'walk'], ['south', 'walk'],
+    ['boat', 'walk'], ['@choose', 'ferry', 'clocks'],
     ['workshop', 'walk'], ['pim', 'talk'], ['door', 'walk'], ['tower', 'walk'], ['gear', 'item', 'oilcan'], ['out', 'walk'],
-    ['fishmonger', 'talk'], ['workshop', 'walk'], ['pim', 'talk'], ['door', 'walk'],
+    ['fishmonger', 'talk'], ['workshop', 'walk'], ['pim', 'talk'], ['back', 'walk'], ['forge', 'item', 'emptylantern'], ['west', 'walk'], ['door', 'walk'],
     ['boat', 'walk'], ['shore', 'walk'], ['hester', 'item', 'lantern'], ['down', 'walk']
   ]);
-  assert(G.has(s, 'compass'));
-  assert(play(s, [['boat', 'walk']]).map, 'boat should open the map once you have the chart');
+  assert(G.has(s, 'compass') && G.has(s, 'lantern'), 'Hester gives the map and hands the lantern back');
+  assert(play(s, [['boat', 'walk']]).map, 'boat should open the map once you have it');
   play(s, [['@sail', 'sentinels']]);
-  // Ask the clever question, then climb the opposite of the answer.
   const r = play(s, [['granite', 'talk'], ['@choose', 'ask_granite', 'other']]);
   const said = r.say[0][1].includes('LEFT') ? 'left' : 'right';
-  play(s, [[said === 'left' ? 'right' : 'left', 'walk'],
+  play(s, [[said === 'left' ? 'right' : 'left', 'walk']]);
+  assert.strictEqual(s.room, 'ledge');
+  assert(!play(s, [['up', 'walk']]).go, 'the goat should block the ledge');
+  play(s, [['goat', 'item', 'bun'], ['up', 'walk'],
     ['chick', 'item', 'fish'], ['feathers', 'hand'], ['down', 'walk'],
     ['@sail', 'reef'], ['lagoon', 'item', 'whistle'], ['nerissa', 'talk'], ['nerissa', 'item', 'ring'],
+    ['west', 'walk'], ['octopus', 'hand'], ['east', 'walk'],
     ['@sail', 'crown'], ['west', 'walk'], ['west', 'walk'], ['west', 'walk'],
-    ['door', 'item', 'whistle'], ['door', 'walk'], ['stairs', 'walk'], ['stone', 'hand'], ['stairs', 'walk'],
+    ['door', 'item', 'whistle'], ['door', 'walk'], ['stairs', 'walk'], ['stone', 'hand'], ['keys', 'hand'],
+    ['back', 'walk'], ['back', 'walk'], ['east', 'walk'], ['east', 'walk'], ['fountain', 'item', 'coin'], ['west', 'walk'], ['west', 'walk'], ['door', 'walk'], ['stairs', 'walk'], ['stairs', 'walk'],
+    ['hound', 'item', 'songsheet'], ['study', 'item', 'keys'], ['study', 'walk'], ['desk', 'hand'], ['out', 'walk'],
+    ['kitchen', 'walk'], ['bertha', 'item', 'ring'], ['out', 'walk'],
+    ['arch', 'walk'], ['doors', 'walk'],
     ['orla', 'item', 'letter']]);
   assert(!s.flags.unmasked, 'Orla should refuse before Elowen vouches');
   play(s, [['elowen', 'item', 'ring'], ['orla', 'item', 'letter']]);
@@ -54,7 +64,7 @@ const t = fresh(); toTower(t);
 assert(play(t, [['down', 'walk']]).choose);
 play(t, [['@choose', 'leave', 'go']]);
 assert.strictEqual(t.won, 'short');
-assert.strictEqual(t.score, G.MAX_SCORE - 20);
+assert.strictEqual(t.score, G.MAX_SCORE - 15);
 
 // Both sentinel layouts work.
 for (const liar of ['granite', 'basalt']) for (const safe of ['left', 'right']) {
@@ -82,6 +92,13 @@ dies('aerie', {}, 'feathers', 'hand');
 dies('aerie', {}, 'chick', 'hand');
 dies('tower', {}, 'varrick', 'item', 'feather');
 dies('sentbase', { safe: 'left' }, 'right', 'walk');
+dies('mistwood', {}, 'web', 'hand');
+dies('mistwood', {}, 'weft', 'hand');
+dies('ledge', {}, 'goat', 'hand');
+dies('corridor', {}, 'kitchen', 'walk');
+dies('corridor', {}, 'hound', 'hand');
+dies('gallery', {}, 'doors', 'walk');
+dies('gearworks', { clock: true }, 'forge', 'hand');
 
 // Every exit points at a real room; walk targets and arrivals sit inside walk boxes.
 const inBox = (w, x, y) => x >= w[0] && x <= w[2] && y >= w[1] && y <= w[3];

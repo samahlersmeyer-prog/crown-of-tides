@@ -199,6 +199,9 @@
       R(c, '#4a2c18', 22, 92, 26, 48); R(c, '#6b4428', 24, 94, 22, 46); circ(c, '#e2b23a', 42, 118, 1.5);
       R(c, '#7a5230', 14, 72, 42, 12); R(c, '#e2b23a', 16, 74, 38, 8); c.fillStyle = '#4a2c18'; c.font = '7px monospace'; c.fillText('CURIOS', 20, 81);
       [[72, 96], [132, 96], [160, 96]].forEach(([x, y]) => { R(c, '#3f5a7a', x, y, 12, 12); R(c, '#bcd2e6', x + 1, y + 1, 4, 4); });
+      // inn door and sign
+      R(c, '#3a2214', 98, 106, 20, 34); R(c, '#5a3a22', 100, 108, 16, 32); circ(c, '#e2b23a', 113, 124, 1.2);
+      R(c, '#5a3a22', 104, 86, 1, 8); R(c, '#2f6b8a', 96, 92, 24, 12); poly(c, '#7a8a9a', [98, 100, 108, 94, 118, 100]); circ(c, '#f0c8a8', 108, 96, 1.5);
       // notice board
       R(c, '#5a3a22', 66, 100, 2, 40); R(c, '#5a3a22', 90, 100, 2, 40); R(c, '#8a6040', 64, 98, 30, 22); R(c, '#f4ead2', 68, 101, 22, 15); c.fillStyle = '#7a1d1d'; c.fillRect(70, 104, 18, 2); c.fillStyle = '#555'; for (let i = 0; i < 4; i++) c.fillRect(70, 108 + i * 2, 16 - i * 3, 1);
       // bunting
@@ -358,8 +361,8 @@
       // barrels
       [[26, 114], [54, 114], [40, 92]].forEach(([x, y]) => { ell(c, '#6b4428', x + 12, y + 18, 13, 18); R(c, '#2e2a26', x, y + 8, 25, 2); R(c, '#2e2a26', x, y + 26, 25, 2); ell(c, '#8a5e38', x + 12, y + 18, 6, 9); });
       // loose stone
-      R(c, s.flags.letter_found ? '#1a1612' : '#7a7266', 138, 90, 18, 12);
-      if (!s.flags.letter_found) { R(c, '#a09888', 138, 90, 18, 1); R(c, '#3a342c', 155, 90, 1, 12); }
+      R(c, s.flags.coin_found ? '#1a1612' : '#7a7266', 138, 90, 18, 12);
+      if (!s.flags.coin_found) { R(c, '#a09888', 138, 90, 18, 1); R(c, '#3a342c', 155, 90, 1, 12); }
       // stairs up
       for (let i = 0; i < 9; i++) R(c, i % 2 ? '#7a7266' : '#857c70', 280 + i * 3, 150 - i * 13, 40, 13);
       torch(c, 120, 60, t); torch(c, 250, 60, t);
@@ -367,7 +370,8 @@
       R(c, '#5a3a22', 226, 146, 22, 4); R(c, '#4a2c18', 228, 150, 3, 12); R(c, '#4a2c18', 244, 150, 3, 12); R(c, '#8a8a8a', 254, 156, 5, 6);
     },
     actors: (s, t) => [{ y: 160, d: c => {
-      figure(c, 237, 160, { skin: '#dba882', hair: '#4a2c18', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', h: 26 }, 0, 1);
+      figure(c, 237, 160, { skin: '#dba882', hair: '#4a2c18', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', h: 30 }, 0, 1);
+      if (!s.flags.got_keys) { c.strokeStyle = '#a8a8a8'; c.lineWidth = 1.5; c.beginPath(); c.arc(240, 143, 3.5, 0, 7); c.stroke(); R(c, '#c99a22', 239, 145, 1.5, 5); R(c, '#1a1a22', 242, 145, 1.5, 5); }
       c.fillStyle = '#e8e8f0'; c.font = '8px monospace'; const z = (t * 0.8) % 1; c.globalAlpha = 1 - z; c.fillText('z', 246 + z * 6, 124 - z * 14); c.fillText('Z', 252 + z * 8, 116 - z * 14); c.globalAlpha = 1;
     } }]
   };
@@ -498,8 +502,9 @@
       // forge glow
       R(c, '#3a2a1a', 230, 96, 40, 56); R(c, '#1a120a', 236, 110, 28, 26);
       const f = 0.6 + Math.sin(t * 5) * 0.2; circ(c, `rgba(255,140,40,${0.3 * f})`, 250, 124, 26); poly(c, '#ff9a1f', [240, 136, 260, 136, 250 + Math.sin(t * 9) * 2, 114]); poly(c, '#ffe066', [245, 136, 255, 136, 250, 122]);
-      // door
+      // doors
       R(c, '#2e1c10', 8, 80, 40, 84); R(c, '#e8c898', 12, 84, 32, 80);
+      R(c, '#2e1c10', 304, 100, 16, 64); R(c, 'rgba(255,150,60,.5)', 308, 104, 12, 60);
       bands(c, 0, 160, 320, 40, ['#4a3020', '#52382a', '#5a4030']);
       c.fillStyle = 'rgba(0,0,0,.2)'; for (let y = 166; y < 200; y += 7) c.fillRect(0, y, 320, 1);
     },
@@ -653,6 +658,256 @@
     }
   };
 
+  // ---------- expansion scenes ----------
+  rooms.inn = {
+    bg(c, s, t) {
+      bands(c, 0, 0, 320, 156, ['#3a2416', '#44291a', '#4e301e', '#583622']);
+      for (let x = 0; x < 320; x += 40) R(c, '#2e1c10', x, 0, 6, 156);
+      R(c, '#2e1c10', 0, 26, 320, 6);
+      // fireplace
+      R(c, '#6a6258', 18, 68, 68, 80); R(c, '#4e4840', 18, 64, 68, 6); R(c, '#110c08', 30, 96, 44, 52);
+      const f = Math.sin(t * 7) * 2; circ(c, 'rgba(255,140,40,.25)', 52, 130, 30);
+      poly(c, '#ff8a1f', [34, 148, 70, 148, 60 + f, 112, 52, 124, 44 - f, 110]); poly(c, '#ffe066', [42, 148, 62, 148, 52 + f, 126]);
+      R(c, '#5a3a22', 26, 40, 52, 22); poly(c, '#7a9ac8', [32, 52, 60, 44, 72, 52, 60, 58]); circ(c, '#fff', 68, 50, 1.5);
+      // bar
+      R(c, '#3a2414', 170, 40, 140, 4); R(c, '#3a2414', 170, 70, 140, 4);
+      const g = rnd(9); for (let i = 0; i < 14; i++) { const x = 176 + i * 9; R(c, ['#2e7a4a', '#8c1d26', '#c99a22', '#5a3a7a'][(g() * 4) | 0], x, 26 + (i % 2) * 4, 5, 14 - (i % 2) * 4); R(c, '#e8e0cc', x + 1, 56, 5, 14); }
+      // patrons' table
+      R(c, '#6b4428', 150, 128, 60, 6); R(c, '#4a2c18', 156, 134, 4, 20); R(c, '#4a2c18', 200, 134, 4, 20);
+      R(c, '#c8c0b0', 158, 120, 6, 8); R(c, '#c8c0b0', 190, 121, 6, 7);
+      circ(c, '#c9906a', 166, 116, 5); R(c, '#4a6a8a', 160, 120, 12, 8);
+      circ(c, '#d8a080', 200, 112, 5); R(c, '#8a4a2a', 194, 116, 12, 12); for (let i = 0; i < 4; i++) R(c, '#e8c890', 176 + i * 3, 124 - i * 2, 2, 4);
+      bands(c, 0, 156, 320, 44, ['#4a3020', '#52382a', '#5a4030']);
+      c.fillStyle = 'rgba(0,0,0,.2)'; for (let y = 162; y < 200; y += 7) c.fillRect(0, y, 320, 1);
+      R(c, '#e8c898', 0, 130, 14, 70);
+    },
+    actors: () => [
+      { y: 130, d: c => { figure(c, 238, 130, { h: 34, skin: '#e3b08c', hair: '#8a3a1a', longHair: true, top: '#7a2a2a', sleeve: '#e8e0cc', legs: '#333' }, 0, -1); R(c, '#5a3a22', 170, 118, 140, 38); R(c, '#7a5230', 166, 114, 148, 6); R(c, '#e8e0cc', 228, 116, 10, 3); } },
+      { y: 158, d: c => { R(c, '#4a2c18', 104, 146, 18, 4); R(c, '#3a2414', 106, 150, 3, 8); R(c, '#3a2414', 118, 150, 3, 8);
+        figure(c, 113, 158, { h: 32, skin: '#f0c8a8', hair: '#c8a040', top: '#3a6a3a', legs: '#5a3a22', hat: r => { r('#8c1d26', -3.5, 27, 7, 2.5); r('#e2b23a', 2, 29, 1, 5); } }, 0, 1);
+        ell(c, '#b8742a', 124, 140, 7, 5); R(c, '#8a5a2a', 126, 126, 2, 12); R(c, '#2a1a10', 122, 139, 3, 2); } }
+    ]
+  };
+
+  rooms.mistwood = {
+    bg(c, s, t) {
+      sky(c, ['#2a2244', '#342a52', '#3e3260', '#4a3e6c'], 150);
+      for (let i = 0; i < 7; i++) { const x = i * 50 - 10; R(c, '#1a1428', x + 16, 30, 14, 120); poly(c, '#22183a', [x, 60, x + 23, 0, x + 46, 60]); poly(c, '#1e1634', [x - 6, 90, x + 23, 30, x + 52, 90]); }
+      // the two web trees
+      R(c, '#150f22', 100, 10, 16, 140); R(c, '#150f22', 210, 10, 16, 140);
+      c.strokeStyle = 'rgba(220,220,240,.55)'; c.lineWidth = 0.7;
+      const cx = 162, cy = 80;
+      for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * 54, cy + Math.sin(a) * 50); c.stroke(); }
+      for (let r = 8; r < 54; r += 7) { c.beginPath(); for (let i = 0; i <= 12; i++) { const a = i * Math.PI / 6; const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.93; i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }
+      for (let i = 0; i < 18; i++) { const a = i * 1.7, r = 10 + (i * 13 % 44); if (Math.sin(t * 3 + i) > 0.3) R(c, '#e8f0ff', cx + Math.cos(a) * r, cy + Math.sin(a) * r, 1, 1); }
+      if (s.flags.got_thread) { circ(c, 'rgba(140,255,160,.25)', cx, cy + 22, 14); ell(c, '#7dffa0', cx, cy + 20, 5, 3); }
+      // ground
+      dith(c, 0, 146, 320, 54, '#2e3a2e', '#283428');
+      grassTufts(c, 150, 196, '#4a6a4a', 17, 24);
+      for (let i = 0; i < 4; i++) ell(c, 'rgba(210,200,240,.10)', ((t * (5 + i * 2) + i * 100) % 440) - 60, 130 + i * 16, 110, 9);
+      R(c, '#e8e0f0', 318, 140, 2, 50);
+    },
+    actors: (s, t) => [{ y: 92, d: c => {
+      const bob = Math.sin(t * 1.4) * 1.5, x = 166, y = 76 + bob;
+      c.strokeStyle = '#120c1e'; c.lineWidth = 2;
+      for (let i = 0; i < 4; i++) { const k = Math.sin(t * 2 + i) * 1.5; c.beginPath(); c.moveTo(x - 4, y + i * 3); c.lineTo(x - 14, y - 4 + i * 4 + k); c.lineTo(x - 18, y + 4 + i * 5); c.stroke(); c.beginPath(); c.moveTo(x + 4, y + i * 3); c.lineTo(x + 14, y - 4 + i * 4 - k); c.lineTo(x + 18, y + 4 + i * 5); c.stroke(); }
+      ell(c, '#241a34', x, y + 8, 9, 10); circ(c, '#2e2244', x, y - 2, 6);
+      R(c, '#f0f0f0', x - 6, y + 2, 12, 2); // lace collar
+      for (let i = 0; i < 6; i++) circ(c, '#ff4a6a', x - 4 + (i % 3) * 4, y - 4 + Math.floor(i / 3) * 2, 0.9);
+    } }]
+  };
+
+  rooms.gearworks = {
+    bg(c, s, t) {
+      const run = s.flags.clock;
+      bands(c, 0, 0, 320, 156, ['#1e1612', '#281c16', '#32241a', '#3a2a1e']);
+      for (let x = 0; x < 320; x += 32) R(c, '#2a1e16', x, 0, 4, 156);
+      gear(c, 40, 50, 24, 12, run ? t * 0.6 : 0, '#7a5a2a'); gear(c, 80, 30, 14, 9, run ? -t : 0, '#8a6a2a');
+      // great forge
+      R(c, '#4a3a30', 110, 30, 120, 122); R(c, '#5a4a3e', 110, 30, 120, 6); poly(c, '#3a2e26', [130, 30, 210, 30, 196, 0, 144, 0]);
+      R(c, '#140c08', 128, 84, 84, 62); circ(c, '#140c08', 170, 84, 42);
+      if (run) {
+        const f = 0.7 + Math.sin(t * 6) * 0.2;
+        circ(c, `rgba(255,170,60,${0.35 * f})`, 170, 110, 70);
+        poly(c, '#ff7a1a', [134, 146, 206, 146, 196, 100, 184, 112, 170, 78 + Math.sin(t * 8) * 4, 156, 112, 144, 100]);
+        poly(c, '#ffd040', [146, 146, 194, 146, 182, 112, 170, 98, 158, 112]); poly(c, '#fff6d0', [160, 146, 180, 146, 170, 120]);
+      } else { for (let i = 0; i < 10; i++) R(c, '#4a4440', 136 + i * 7, 140 - (i % 3), 6, 4); }
+      // bellows
+      poly(c, '#6b4428', [270, 122, 310, 116, 310, 150, 270, 144]); R(c, '#5a3a22', 300, 112, 4, 40);
+      // anvil
+      R(c, '#3a3a3e', 60, 136, 34, 8); R(c, '#2a2a2e', 70, 144, 14, 12);
+      bands(c, 0, 156, 320, 44, ['#2a2018', '#30241c', '#362a20']);
+      c.fillStyle = 'rgba(0,0,0,.3)'; for (let x = 0; x < 320; x += 16) c.fillRect(x, 156, 1, 44);
+      R(c, '#c8a878', 0, 130, 14, 70);
+    },
+    actors: (s, t) => [{ y: 162, d: c => {
+      const run = s.flags.clock, pump = run ? Math.sin(t * 3) * 3 : 0, x = 250, y = 162;
+      R(c, '#8a6a2a', x - 9, y - 18, 6, 18); R(c, '#8a6a2a', x + 3, y - 18, 6, 18);
+      R(c, '#c99a22', x - 13, y - 46, 26, 28); R(c, '#e2b23a', x - 13, y - 46, 26, 3); circ(c, run ? '#ff9a3a' : '#5a4a2a', x, y - 32, 5);
+      R(c, '#b88a2a', x - 19, y - 44 + pump, 6, 20); R(c, '#b88a2a', x + 13, y - 44 - pump, 6, 20);
+      R(c, '#c99a22', x - 8, y - 60, 16, 14); R(c, run ? '#9ff0ff' : '#3a4a5a', x - 5, y - 55, 4, 3); R(c, run ? '#9ff0ff' : '#3a4a5a', x + 1, y - 55, 4, 3);
+      R(c, '#8a6a2a', x - 1, y - 66, 2, 6); circ(c, '#e2b23a', x, y - 67, 2);
+    } }]
+  };
+
+  rooms.ledge = {
+    bg(c, s, t) {
+      sky(c, ['#2e52a0', '#3e62aa', '#5a7cb8', '#86a0c8', '#b4c4dc'], 200);
+      for (let i = 0; i < 5; i++) ell(c, 'rgba(255,255,255,.8)', ((i * 90 + t * 6) % 420) - 50, 150 + i * 9, 50, 7);
+      sea(c, t, 186, 14, ['#2a5f9a', '#2f6aa6']);
+      // rock wall
+      poly(c, '#6a6458', [0, 0, 320, 0, 320, 164, 0, 164]);
+      dith(c, 0, 0, 320, 160, '#746e60', '#6a6458');
+      c.fillStyle = '#4e4a40'; [[40, 20, 1, 60], [120, 50, 1, 70], [230, 10, 1, 50], [280, 70, 1, 60]].forEach(a => c.fillRect(...a));
+      poly(c, '#5e5a4e', [190, 124, 236, 120, 244, 132, 186, 134]); // goat rock
+      // the ledge
+      R(c, '#8a8274', 30, 160, 260, 24); R(c, '#9a9282', 30, 160, 260, 3); R(c, '#4e4a40', 30, 182, 260, 3);
+      poly(c, '#6a6458', [30, 185, 290, 185, 270, 196, 50, 196]);
+      R(c, '#9a9282', 0, 150, 30, 40); R(c, '#9a9282', 290, 140, 30, 50);
+      for (let i = 0; i < 5; i++) R(c, '#8a8274', 292 + i * 5, 140 - i * 10, 28 - i * 5, 6);
+    },
+    actors: (s, t) => [{ y: s.flags.goat ? 126 : 176, d: c => {
+      const gx = s.flags.goat ? 214 : 204, gy = s.flags.goat ? 124 : 174, chew = Math.sin(t * 6) > 0 ? 1 : 0;
+      ell(c, '#f0ece0', gx, gy - 12, 14, 8);
+      R(c, '#e0dccc', gx - 11, gy - 6, 3, 8); R(c, '#e0dccc', gx - 4, gy - 6, 3, 8); R(c, '#e0dccc', gx + 4, gy - 6, 3, 8); R(c, '#e0dccc', gx + 10, gy - 6, 3, 8);
+      ell(c, '#f0ece0', gx - 15, gy - 20, 6, 5); R(c, '#e0dccc', gx - 20, gy - 18 + chew, 6, 4);
+      R(c, '#111', gx - 17, gy - 22, 1.5, 1.5); R(c, '#d8d0b8', gx - 18, gy - 14 + chew, 4, 4);
+      c.strokeStyle = '#8a7a5a'; c.lineWidth = 2; c.beginPath(); c.arc(gx - 11, gy - 26, 5, Math.PI, Math.PI * 1.9); c.stroke();
+      if (s.flags.goat) ell(c, '#c8862e', gx - 22, gy - 14, 3, 2);
+    } }]
+  };
+
+  rooms.tidepools = {
+    bg(c, s, t) {
+      sky(c, ['#3a8ac8', '#4a9ad0', '#6ab0d8', '#98c8e0', '#d0e4e8'], 70);
+      clouds(c, t, 18, 'rgba(255,255,255,.8)', 91);
+      sea(c, t, 70, 76, ['#1aa0b8', '#22acc0', '#2ab8c4', '#40c4c8']);
+      // coral arch
+      poly(c, '#c87a7a', [200, 146, 210, 70, 240, 50, 280, 52, 304, 74, 312, 146, 290, 146, 286, 90, 264, 76, 236, 80, 222, 100, 222, 146]);
+      dith(c, 226, 54, 70, 20, '#d88a8a', '#c87a7a');
+      if (Math.sin(t * 1.3) > 0.6) ell(c, 'rgba(255,255,255,.7)', 254, 140, 26, 5);
+      dith(c, 0, 144, 320, 56, '#f0c8b8', '#e8b8a8');
+      c.fillStyle = 'rgba(255,255,255,.75)'; for (let x = 0; x < 320; x += 7) c.fillRect(x, 143 + Math.sin(x / 8 + t * 1.5) * 1.5, 5, 2);
+      // pools
+      ell(c, '#2a8aa0', 92, 177, 38, 12); ell(c, '#50c0c8', 90, 176, 32, 9);
+      for (let i = 0; i < 6; i++) { circ(c, ['#ff8a6a', '#ffd84a', '#c86ac8'][i % 3], 70 + i * 8, 174 + (i % 2) * 4, 1.6); }
+      poly(c, '#ff8a4a', [110, 172, 113, 168, 116, 172, 120, 173, 116, 175, 117, 180, 113, 177, 109, 180, 110, 175, 106, 173]);
+      ell(c, '#3a9aa8', 30, 160, 18, 6); ell(c, '#5ac0c8', 30, 159, 14, 4);
+      [[250, 186], [276, 176], [140, 190]].forEach(([x, y]) => poly(c, '#ff9aa8', [x, y, x + 3, y - 6, x + 6, y]));
+    },
+    actors: (s, t) => s.flags.octo ? [] : [{ y: 182, d: c => {
+      const w = Math.sin(t * 3);
+      ell(c, '#a86ac8', 164, 174, 7, 6); circ(c, '#fff', 161, 172, 1.6); circ(c, '#fff', 167, 172, 1.6); R(c, '#111', 161, 172, 1, 1); R(c, '#111', 167, 172, 1, 1);
+      c.strokeStyle = '#a86ac8'; c.lineWidth = 2; for (let i = 0; i < 5; i++) { c.beginPath(); c.moveTo(158 + i * 3, 178); c.quadraticCurveTo(156 + i * 3 + w * 2, 183, 154 + i * 4, 182 + (i % 2) * 2); c.stroke(); }
+    } }]
+  };
+
+  const castleWall = (c, seed) => { stoneWall(c, 0, 0, 320, 156, '#5e5850', '#46423c', seed); };
+  const castleFloor = c => { bands(c, 0, 156, 320, 44, ['#3e3a34', '#46423a', '#4e4a42']); c.fillStyle = 'rgba(0,0,0,.25)'; for (let y = 162; y < 200; y += 8) for (let x = ((y / 8) % 2) * 10; x < 320; x += 20) c.fillRect(x, y, 1, 8); for (let y = 162; y < 200; y += 8) c.fillRect(0, y, 320, 1); };
+  const door = (c, x, y, w, h, col, open) => { R(c, '#3a2a1a', x - 3, y - 3, w + 6, h + 3); poly(c, '#3a2a1a', [x - 3, y, x + w / 2, y - 14, x + w + 3, y]); R(c, open ? '#1a120a' : col, x, y, w, h); if (!open) { R(c, 'rgba(0,0,0,.25)', x + w / 2 - 1, y, 2, h); circ(c, '#c99a22', x + w - 6, y + h / 2, 2); } };
+
+  rooms.corridor = {
+    bg(c, s, t) {
+      castleWall(c, 111);
+      door(c, 70, 82, 32, 72, '#6b4428', false);
+      door(c, 180, 82, 32, 72, '#1a1a22', s.flags.unlocked);
+      if (!s.flags.unlocked) { R(c, '#cfd6d8', 204, 116, 4, 6); }
+      R(c, '#e8d8a8', 302, 96, 18, 64); c.fillStyle = 'rgba(255,230,170,.18)'; poly(c, 'rgba(255,230,170,.12)', [302, 160, 320, 160, 320, 200, 260, 200]);
+      // tapestry
+      R(c, '#2f8a7a', 120, 30, 46, 60); R(c, '#e2b23a', 120, 30, 46, 3); poly(c, '#e2b23a', [134, 50, 152, 50, 143, 70]);
+      R(c, '#3a3a3e', 240, 96, 22, 50); circ(c, '#5a5a62', 251, 92, 7); R(c, '#9aa7a8', 244, 100, 14, 30); // armor stand
+      torch(c, 40, 60, t); torch(c, 160, 100, t); torch(c, 280, 60, t);
+      castleFloor(c);
+      R(c, '#8c1d26', 20, 168, 280, 18); R(c, '#e2b23a', 20, 168, 280, 1); R(c, '#e2b23a', 20, 185, 280, 1);
+      R(c, '#110f0d', 0, 130, 14, 70);
+    },
+    actors: (s, t) => [{ y: 176, d: c => {
+      const asleep = s.flags.hound, x = 152, y = 176, br = asleep ? Math.sin(t * 1.5) * 1 : 0;
+      ell(c, '#1a1a1e', x, y - 7 - br * 0.5, 22, 8 + br);
+      ell(c, '#222226', x - 20, y - (asleep ? 6 : 14), 8, 6); poly(c, '#222226', [x - 24, y - (asleep ? 6 : 14), x - 34, y - (asleep ? 4 : 11), x - 24, y - (asleep ? 2 : 9)]);
+      poly(c, '#1a1a1e', [x - 18, y - (asleep ? 11 : 19), x - 15, y - (asleep ? 17 : 25), x - 13, y - (asleep ? 11 : 19)]);
+      R(c, '#c8c8c8', x - 16, y - (asleep ? 4 : 11), 6, 2);
+      for (let i = 0; i < 3; i++) R(c, '#c8c8c8', x - 15 + i * 2, y - (asleep ? 5 : 12), 1, 2);
+      if (asleep) { c.fillStyle = '#e8e8f0'; c.font = '8px monospace'; const z = (t * 0.6) % 1; c.globalAlpha = 1 - z; c.fillText('z', x - 24 + z * 4, y - 16 - z * 12); c.fillText('Z', x - 18 + z * 6, y - 24 - z * 12); c.globalAlpha = 1; }
+      else { R(c, '#ff3a2a', x - 23, y - 16, 2, 2); const wag = Math.sin(t * 9) * 4; R(c, '#1a1a1e', x + 20, y - 10 + wag * 0.3, 8, 2); }
+      if (!asleep) { R(c, '#1a1a1e', x - 16, y - 8, 3, 8); R(c, '#1a1a1e', x - 8, y - 8, 3, 8); R(c, '#1a1a1e', x + 10, y - 8, 3, 8); R(c, '#1a1a1e', x + 16, y - 8, 3, 8); }
+    } }]
+  };
+
+  rooms.kitchen = {
+    bg(c, s, t) {
+      stoneWall(c, 0, 0, 320, 156, '#7a6e5e', '#5e5446', 121);
+      for (let i = 0; i < 9; i++) { const x = 24 + i * 15; R(c, '#3a2a1a', x + 4, 22, 1, 10); circ(c, i % 2 ? '#c87a3a' : '#b8682a', x + 4, 40, 6); R(c, '#e8b878', x + 1, 38, 6, 2); }
+      // hearth with boar on a spit
+      R(c, '#4e4840', 228, 56, 86, 96); R(c, '#110c08', 238, 84, 66, 68);
+      const f = Math.sin(t * 7) * 2; circ(c, 'rgba(255,140,40,.25)', 270, 140, 36); poly(c, '#ff8a1f', [244, 152, 298, 152, 286 + f, 124, 270, 134, 256 - f, 122]); poly(c, '#ffe066', [256, 152, 286, 152, 270 + f, 134]);
+      R(c, '#3a3a3e', 236, 112, 72, 2); ell(c, '#a8582a', 270, 112, 22, 9); ell(c, '#c8783a', 266, 108, 12, 4);
+      // table + cake
+      R(c, '#7a5230', 70, 140, 120, 6); R(c, '#5a3a22', 76, 146, 5, 12); R(c, '#5a3a22', 180, 146, 5, 12);
+      [[98, 128, 46], [102, 118, 38], [106, 110, 30], [110, 104, 22]].forEach(([x, y, w]) => { R(c, '#f6eee0', x, y, w, 10); R(c, '#3fae8f', x, y, w, 2); });
+      R(c, '#1a1a22', 118, 98, 3, 6); R(c, '#3fae8f', 124, 96, 3, 8); circ(c, '#f0c8a8', 125, 95, 1.5);
+      ell(c, '#c8c0b0', 160, 136, 10, 4); ell(c, '#e8b878', 160, 134, 7, 2);
+      R(c, '#3a2a1a', 20, 70, 50, 70); R(c, '#e8c898', 22, 72, 14, 66); // larder
+      castleFloor(c);
+      R(c, '#110f0d', 0, 130, 16, 70);
+    },
+    actors: () => [{ y: 164, d: c => figure(c, 200, 164, { h: 33, skin: '#f0c0a0', hair: '#d8d8d8', top: '#e8e0cc', dress: '#8a5a3a', trim: '#e8e0cc', legs: '#8a5a3a', hat: r => { r('#f6f0e0', -3.5, 27.5, 7, 3); } }, 0, -1) }]
+  };
+
+  rooms.study = {
+    bg(c, s, t) {
+      bands(c, 0, 0, 320, 160, ['#1a1420', '#22182a', '#2a1e32', '#30223a']);
+      for (let x = 0; x < 320; x += 24) R(c, '#160f1c', x, 0, 3, 160);
+      // black curtains + window
+      R(c, '#3a3a5a', 86, 24, 28, 60); R(c, '#0e0a14', 76, 20, 14, 80); R(c, '#0e0a14', 110, 20, 14, 80);
+      // portrait of Varrick
+      R(c, '#c99a22', 122, 22, 56, 66); R(c, '#2a1a2a', 126, 26, 48, 58); ell(c, '#d8c0a8', 150, 48, 9, 11); R(c, '#111', 141, 34, 18, 6); poly(c, '#e2b23a', [140, 36, 160, 36, 158, 28, 154, 33, 150, 26, 146, 33, 142, 28]); R(c, '#1a1a22', 136, 62, 28, 22); R(c, '#111', 145, 54, 10, 6);
+      // bookshelves
+      R(c, '#2a1a10', 228, 28, 84, 116); for (let r = 0; r < 4; r++) { R(c, '#1a100a', 230, 54 + r * 28, 80, 3); const g = rnd(40 + r); for (let x = 232; x < 306;) { const w = 4 + g() * 6; R(c, ['#5a1a2a', '#1a3a2a', '#3a2a5a', '#5a4a1a'][(g() * 4) | 0], x, 34 + r * 28, w, 20); x += w + 1; } }
+      // desk
+      R(c, '#3a2214', 128, 116, 94, 10); R(c, '#2a180e', 132, 126, 86, 28); R(c, '#4a2c18', 168, 132, 14, 6); circ(c, '#c99a22', 175, 135, 1.5);
+      R(c, '#e8e0cc', 140, 108, 22, 8); R(c, '#d8d0bc', 146, 104, 18, 8); R(c, '#111', 196, 104, 3, 12); poly(c, '#e8e0cc', [199, 104, 206, 98, 200, 108]);
+      if (s.flags.letter_found) R(c, '#1a100a', 166, 138, 18, 4);
+      // raven perch
+      R(c, '#3a2a1a', 50, 84, 2, 76); R(c, '#3a2a1a', 40, 84, 22, 3);
+      const hop = Math.sin(t * 2) > 0.9 ? -2 : 0;
+      ell(c, '#0e0e14', 52, 74 + hop, 7, 9); circ(c, '#0e0e14', 54, 64 + hop, 5); poly(c, '#3a3a40', [58, 64 + hop, 64, 66 + hop, 58, 67 + hop]); R(c, '#e8e8f0', 55, 62 + hop, 1, 1);
+      // candle
+      R(c, '#e8e0cc', 212, 100, 3, 10); poly(c, '#ffb040', [211, 100, 216, 100, 213.5, 94 + Math.sin(t * 9)]); circ(c, 'rgba(255,180,80,.15)', 213, 96, 12);
+      bands(c, 0, 160, 320, 40, ['#2a1e24', '#30242a', '#362a30']);
+      R(c, '#3a1020', 60, 166, 200, 26); R(c, '#e2b23a', 60, 166, 200, 1);
+      R(c, '#110f0d', 0, 130, 16, 70);
+    }
+  };
+
+  rooms.gallery = {
+    bg(c, s, t) {
+      bands(c, 0, 0, 320, 160, ['#3a3048', '#443854', '#4e4060', '#56486a']);
+      R(c, '#2a2238', 0, 112, 320, 4);
+      // portraits
+      const g = rnd(55);
+      [[30, 36], [72, 30], [116, 36], [160, 30]].forEach(([x, y], i) => {
+        R(c, '#c99a22', x, y, 38, 50); R(c, ['#2a3a5a', '#3a2a3a', '#2a3a2a', '#3a4a8a'][i], x + 3, y + 3, 32, 44);
+        ell(c, '#e8c8a8', x + 19, y + 20, 7, 8); R(c, ['#5a3a1a', '#d8d8d8', '#8a5a2a', '#e8e8e8'][i], x + 12, y + 11, 14, 4);
+        poly(c, '#e2b23a', [x + 12, y + 11, x + 26, y + 11, x + 24, y + 6, x + 19, y + 10, x + 14, y + 6]);
+        R(c, ['#8c1d26', '#2f6b5a', '#5a3a7a', '#3a4a8a'][i], x + 9, y + 30, 20, 17);
+        if (i === 3) { circ(c, '#f0c8a8', x + 28, y + 34, 3); R(c, '#c8862e', x + 25, y + 30, 6, 3); R(c, '#e8e8e8', x + 15, y + 26, 8, 6); }
+      });
+      // doors to the great hall
+      R(c, '#2a1e14', 228, 54, 74, 106); poly(c, '#2a1e14', [228, 54, 265, 34, 302, 54]);
+      R(c, '#6b4428', 234, 60, 30, 100); R(c, '#6b4428', 266, 60, 30, 100); R(c, '#e8d8a8', 264, 60, 2, 100);
+      circ(c, '#c99a22', 258, 112, 2); circ(c, '#c99a22', 272, 112, 2);
+      torch(c, 214, 70, t); torch(c, 314, 70, t);
+      castleFloor(c);
+      R(c, '#8c1d26', 0, 168, 320, 18); R(c, '#e2b23a', 0, 168, 320, 1); R(c, '#e2b23a', 0, 185, 320, 1);
+      R(c, '#e8d8a8', 0, 120, 14, 40);
+    },
+    actors: () => [
+      { y: 162, d: c => figure(c, 222, 162, { skin: '#dba882', hair: '#2a1d12', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, 1) },
+      { y: 162, d: c => figure(c, 308, 162, { skin: '#b9845e', hair: '#1a120c', top: '#2f8a7a', armor: '#9aa7a8', legs: '#4a4a52', hat: r => { r('#9aa7a8', -3, 27, 6, 3); } }, 0, -1) }
+    ]
+  };
+
   // ---------- talker portraits (drawn into 56x56) ----------
   const P = {
     rowan: { bg: '#2f6b3a', skin: '#e8b48a', hair: '#6b3f1d', shirt: '#2f6b3a', collar: '#efe6d0' },
@@ -669,7 +924,12 @@
     elowen: { bg: '#3fae8f', skin: '#f0c8a8', hair: '#c8862e', long: true, shirt: '#3fae8f', circlet: true },
     orla: { bg: '#2f6b5a', skin: '#d8a888', hair: '#9a9a9a', shirt: '#b8c4c6', scar: true },
     varrick: { bg: '#1a1020', skin: '#d8c0a8', hair: '#111', beard: '#111', shirt: '#1a1a22', pearl: true, sly: true },
-    king: { bg: '#3a4a8a', skin: '#f0d0b8', hair: '#e8e8e8', beard: '#e8e8e8', shirt: '#3a4a8a', crown: true }
+    king: { bg: '#3a4a8a', skin: '#f0d0b8', hair: '#e8e8e8', beard: '#e8e8e8', shirt: '#3a4a8a', crown: true },
+    marla: { bg: '#583622', skin: '#e3b08c', hair: '#8a3a1a', long: true, shirt: '#7a2a2a' },
+    fennick: { bg: '#3a6a3a', skin: '#f0c8a8', hair: '#c8a040', shirt: '#3a6a3a', hat: '#8c1d26' },
+    weft: { bg: '#2a2244', skin: '#2e2244', hair: '#241a34', shirt: '#f0f0f0', spider: true },
+    anvil: { bg: '#32241a', skin: '#c99a22', hair: '#c99a22', shirt: '#b88a2a', robot: true },
+    bertha: { bg: '#7a6e5e', skin: '#f0c0a0', hair: '#d8d8d8', shirt: '#8a5a3a', hat: '#f6f0e0' }
   };
   function portrait(c, who) {
     const o = P[who]; if (!o) return false;
@@ -699,6 +959,8 @@
     if (o.pipe) { R(c, '#4a2c18', 32, 34, 9, 2); R(c, '#4a2c18', 40, 31, 3, 4); }
     if (o.scar) R(c, '#a86a5a', 33, 22, 1, 9);
     if (o.pearl) { circ(c, '#200a30', 28, 47, 3); circ(c, 'rgba(160,80,220,.6)', 28, 47, 5); }
+    if (o.spider) { bands(c, 0, 0, 56, 56, [o.bg, '#221a3a']); ell(c, '#2e2244', 28, 30, 18, 16); for (let i = 0; i < 8; i++) circ(c, '#ff4a6a', 18 + (i % 4) * 7, 22 + Math.floor(i / 4) * 6, 2); R(c, '#f0f0f0', 12, 44, 32, 4); R(c, '#e8e8e8', 16, 48, 4, 2); R(c, '#e8e8e8', 36, 48, 4, 2); poly(c, '#120c1e', [22, 38, 26, 44, 28, 38]); poly(c, '#120c1e', [30, 38, 32, 44, 36, 38]); }
+    if (o.robot) { bands(c, 0, 0, 56, 56, [o.bg, '#2a1e16']); R(c, '#c99a22', 12, 10, 32, 34); R(c, '#e2b23a', 12, 10, 32, 3); R(c, '#9ff0ff', 18, 22, 7, 5); R(c, '#9ff0ff', 31, 22, 7, 5); for (let i = 0; i < 5; i++) R(c, '#5a4a2a', 18 + i * 4, 34, 2, 4); R(c, '#8a6a2a', 27, 2, 2, 8); circ(c, '#e2b23a', 28, 3, 2.5); R(c, '#b88a2a', 8, 44, 40, 12); circ(c, '#ff9a3a', 28, 50, 3); }
     return true;
   }
   function shade(hex, amt) {
@@ -771,6 +1033,13 @@
     compass: c => { R(c, '#e8d8b0', 2, 4, 20, 16); R(c, '#c8b080', 2, 4, 3, 16); R(c, '#c8b080', 19, 4, 3, 16); ell(c, '#8aa060', 10, 11, 4, 3); ell(c, '#8a7aa0', 15, 8, 2, 1.5); circ(c, '#c99a22', 16, 15, 3.5); poly(c, '#8c1d26', [16, 12, 17, 15, 15, 15]); },
     feather: c => { c.save(); c.translate(12, 12); c.rotate(-0.8); circ(c, 'rgba(255,220,100,.4)', 0, 0, 10); ell(c, '#ffd84a', 0, 0, 10, 3.5); R(c, '#fff6c0', -11, -0.5, 22, 1); c.restore(); },
     mirror: c => { ell(c, '#e79aa0', 12, 13, 10, 9); ell(c, '#dfeff6', 12, 13, 7, 6); R(c, '#ffffff', 8, 9, 3, 2); for (let i = 0; i < 5; i++) R(c, '#b9666e', 4 + i * 4, 21, 2, 2); },
+    emptylantern: c => { R(c, '#8a6a2a', 9, 1, 6, 3); R(c, '#c99a22', 6, 4, 12, 3); R(c, '#c99a22', 6, 19, 12, 3); R(c, '#c99a22', 6, 7, 2, 12); R(c, '#c99a22', 16, 7, 2, 12); R(c, 'rgba(180,200,210,.35)', 8, 7, 8, 12); },
+    bun: c => { ell(c, '#c8863a', 12, 14, 9, 6); ell(c, '#e8a85a', 11, 12, 7, 4); R(c, '#fff3c0', 8, 10, 3, 1); R(c, '#fff3c0', 13, 9, 3, 1); },
+    thread: c => { c.strokeStyle = '#e8f0ff'; c.lineWidth = 1; c.beginPath(); c.moveTo(3, 20); c.bezierCurveTo(8, 2, 14, 22, 21, 4); c.stroke(); circ(c, 'rgba(220,230,255,.4)', 12, 12, 8); },
+    songsheet: c => { R(c, '#f4ead2', 4, 3, 16, 19); for (let i = 0; i < 4; i++) R(c, '#8a7a5a', 6, 7 + i * 4, 12, 0.7); circ(c, '#2a1a10', 9, 9, 1.4); circ(c, '#2a1a10', 14, 13, 1.4); circ(c, '#2a1a10', 11, 17, 1.4); R(c, '#2a1a10', 10, 5, 0.8, 4); R(c, '#2a1a10', 15, 9, 0.8, 4); },
+    keys: c => { c.strokeStyle = '#8a8a8a'; c.lineWidth = 2; c.beginPath(); c.arc(9, 9, 6, 0, 7); c.stroke(); R(c, '#c99a22', 12, 12, 2, 10); R(c, '#c99a22', 14, 18, 3, 2); R(c, '#1a1a22', 16, 10, 2, 11); R(c, '#cfd6d8', 15, 8, 4, 3); R(c, '#1a1a22', 18, 18, 3, 2); },
+    coin: c => { circ(c, '#a8822a', 12, 12, 8); circ(c, '#e2b23a', 12, 12, 6.5); circ(c, '#7a5a1a', 12, 11, 3); R(c, '#e2b23a', 10, 10, 1.5, 1.5); R(c, '#e2b23a', 13, 10, 1.5, 1.5); R(c, '#7a5a1a', 10, 14, 5, 1.5); },
+    tabard: c => { poly(c, '#2f8a7a', [6, 3, 18, 3, 20, 22, 4, 22]); R(c, '#e2b23a', 6, 3, 12, 2); circ(c, '#e2b23a', 12, 12, 3); poly(c, '#2f8a7a', [10, 11, 14, 11, 12, 14]); },
     letter: c => { R(c, '#f4ead2', 3, 5, 18, 14); poly(c, '#d8ccb0', [3, 5, 12, 13, 21, 5]); circ(c, '#8c1d26', 12, 13, 3); }
   };
 

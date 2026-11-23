@@ -121,3 +121,16 @@ body.help-mode #btn-help { background: #2a2414; border-color: var(--gold); color
 @media (max-width: 520px) { .cp { flex-direction: column; align-items: center; } .slider input { min-height: 100px; } }
 .msg.voice-only p { display: none; }
 .msg.voice-only .msg-hint::before { content: '♪ '; }
+
+/* Family play: name, death album, scoreboard */
+.who, .check { font-size: clamp(15px, 2.6vw, 19px); text-shadow: 0 1px 4px #000; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.who input { font: inherit; width: 11em; padding: 6px 10px; min-height: 40px; background: #0d1424; color: var(--parch); border: 2px solid var(--gold-dim); border-radius: 3px; text-align: center; }
+.check input { width: 22px; height: 22px; accent-color: var(--gold); }
+.album { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; width: min(100%, 700px); }
+.album li { padding: 6px 8px; border: 1px solid #5a2a30; border-radius: 3px; background: #1a1016; font-size: clamp(13px, 2.2vw, 16px); color: #6f5560; }
+.album li.found { color: var(--parch); border-color: var(--rust); background: #3a1218; }
+.board { border-collapse: collapse; width: min(100%, 620px); font-size: clamp(13px, 2.3vw, 17px); font-variant-numeric: tabular-nums; }
+.board th { font-family: 'Cinzel', serif; font-size: .75em; color: var(--gold); letter-spacing: .05em; padding: 4px 8px; border-bottom: 2px solid var(--gold-dim); }
+.board td { padding: 5px 8px; border-bottom: 1px solid #2c3c5e; }
+.board td:nth-child(2) { text-align: left; }
+.board tr.me td { color: var(--gold); }

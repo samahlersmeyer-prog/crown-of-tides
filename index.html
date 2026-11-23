@@ -34,9 +34,12 @@
       <h1>Crown<br>of Tides</h1>
       <p class="tag">A shipwrecked prince. A princess in a mirror. A wedding at sundown.</p>
       <p class="howto mouse-only">Move the pointer to the top of the screen for the icon bar. Right-click to switch actions.</p>
+      <label class="who">Who is playing? <input id="t-name" type="text" maxlength="12" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Your name"></label>
+      <label class="check"><input id="t-explorer" type="checkbox"> Young explorer: things you can touch sparkle</label>
       <div class="btns">
         <button id="t-new">Begin the quest</button>
         <button id="t-continue">Continue</button>
+        <button id="t-board">Scoreboard</button>
       </div>
     </section>
 
@@ -89,7 +92,9 @@
           <button id="m-restore">Restore</button>
           <button id="m-restart">Restart</button>
           <button id="m-hints">Hint book</button>
-          <button id="m-about">About</button>
+          <button id="m-album">Death album</button>
+        <button id="m-board">Scoreboard</button>
+        <button id="m-about">About</button>
           <button data-close>Play</button>
         </div>
         <div class="cp-sliders">
@@ -102,9 +107,22 @@
         <button id="m-music">Music: On</button>
         <button id="m-sound">Sound: On</button>
         <button id="m-bar" class="mouse-only">Icon bar: Drops down</button>
+        <button id="m-explorer">Sparkles: Off</button>
       </div>
     </section>
 
+    <section id="album" class="panel" hidden aria-label="Death album">
+      <h2>Death Album</h2>
+      <p id="album-count" class="prose small"></p>
+      <ol id="album-list" class="album"></ol>
+      <div class="btns"><button id="album-close">Close</button></div>
+    </section>
+    <section id="board" class="panel" hidden aria-label="Scoreboard">
+      <h2>Scoreboard</h2>
+      <p id="board-note" class="prose small" aria-live="polite"></p>
+      <table class="board"><thead><tr><th></th><th>Player</th><th>Points</th><th>Ending</th><th>Time</th><th>Deaths</th></tr></thead><tbody id="board-rows"></tbody></table>
+      <div class="btns"><button id="board-close">Close</button></div>
+    </section>
     <section id="about" class="panel" hidden aria-label="About">
       <h2>About</h2>
       <p class="prose">An original fan-made adventure in the spirit of the classic Sierra quests of the early '90s. Five islands, 231 points, two endings. Point, click, and try everything. Dying is part of the fun, and you can always try again.</p>
@@ -115,11 +133,13 @@
 
     <section id="death" class="panel death" hidden role="alertdialog" aria-label="You have died">
       <h2>You have died</h2>
+      <p id="death-name" class="prose score-final"></p>
       <p id="death-text" class="prose"></p>
       <div class="btns">
         <button id="d-retry">Try again</button>
         <button id="d-restore">Restore</button>
         <button id="d-restart">Restart</button>
+        <button id="d-album">Death album</button>
       </div>
     </section>
 
@@ -127,7 +147,8 @@
       <h2 id="end-title">Happily Ever After</h2>
       <p id="end-text" class="prose"></p>
       <p id="end-score" class="prose score-final"></p>
-      <div class="btns"><button id="e-again">Play again</button></div>
+      <p id="end-stats" class="prose small"></p>
+      <div class="btns"><button id="e-again">Play again</button><button id="e-board">Scoreboard</button></div>
     </section>
   </div>
 
@@ -149,6 +170,7 @@
 <script src="js/vga.js"></script>
 <script src="js/art.js"></script>
 <script src="js/painted.js"></script>
-<script src="js/engine.js"></script>
+<script src="js/board.js"></script>
+  <script src="js/engine.js"></script>
 </body>
 </html>

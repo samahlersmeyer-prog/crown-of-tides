@@ -23,6 +23,14 @@
   let volume = num('vol', 7), speed = num('speed', pref('fast', false) ? 5 : 3);
   let talkMode = localStorage.getItem('cot_talk') || 'both';   // text | both | speech, like the CD versions
   let pinned = pref('pinned', false);
+  // Who is playing. Each name has its own saves and death album; no name keeps the plain keys.
+  const clean = n => (n || '').replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 12);
+  let player = clean(localStorage.getItem('cot_player')), explorer = pref('explorer', false), playing = false;
+  const slug = () => player.toLowerCase().replace(/ /g, '_');
+  const key = k => 'cot2_' + (player ? slug() + '_' : '') + k;
+  const nameIt = t => player ? t.replace(/\bRowan\b/g, player) : t;
+  const clock = secs => { const m = Math.floor(secs / 60); return (m >= 60 ? Math.floor(m / 60) + 'h ' : '') + (m % 60) + 'm'; };
+  const album = () => { try { const a = JSON.parse(localStorage.getItem('cot_album' + (player ? '_' + slug() : ''))); if (Array.isArray(a)) return a; } catch (e) {} return []; };
   M.setOn(pref('music', true)); M.setVolume(volume / 10);
   document.body.classList.toggle('pinned', pinned);
 
@@ -94,11 +102,11 @@
     hush();
     if (!queue.length) { $('msg').hidden = true; busy = false; const f = afterMsgs; afterMsgs = null; if (f) f(); return; }
     busy = true;
-    const line = queue.shift(), who = Array.isArray(line) ? line[0] : null, text = Array.isArray(line) ? line[1] : line;
+    const line = queue.shift(), who = Array.isArray(line) ? line[0] : null, text = nameIt(Array.isArray(line) ? line[1] : line);
     const pc = $('portrait'), p = pc.getContext('2d');
     p.clearRect(0, 0, pc.width, pc.height);
     pc.hidden = !(who && A.portrait(p, who));
-    $('msg-who').textContent = who ? SPEAKER[who] || '' : '';
+    $('msg-who').textContent = who ? nameIt(SPEAKER[who] || '') : '';
     $('msg-who').hidden = !who;
     $('msg-text').textContent = who ? `“${text}”` : text;
     $('msg').hidden = false; $('msg').focus();
@@ -113,7 +121,7 @@
   // ---------- results ----------
   function apply(r, before) {
     if (r.die) { die(r.die); return; }
-    if (s.score > before) updateScore();
+    if (s.score > before) { updateScore(); postScore(); }
     syncMapBtn();
     showMsgs(r.say, () => {
       if (s.score > before) sfx.score();
@@ -332,7 +340,8 @@
   function openHints() {
     const h = G.hints(s);
     $('hint-q').textContent = h.q; $('hint-a').textContent = '';
-    $('hint-nudge').hidden = false; $('hint-answer').hidden = true;
+    $('hint-nudge').hidden = explorer; $('hint-answer').hidden = true;
+    if (explorer) $('hint-a').textContent = h.nudge + '\n\n' + h.answer;   // young explorers get the answer straight away
     $('hint-nudge').onclick = () => { $('hint-a').textContent = h.nudge; $('hint-nudge').hidden = true; $('hint-answer').hidden = false; };
     $('hint-answer').onclick = () => { $('hint-a').textContent = h.answer; $('hint-answer').hidden = true; };
     openPanel('hints');
@@ -352,12 +361,12 @@
 
   // ---------- save slots ----------
   const SLOTS = 3;
-  const autosave = () => { try { localStorage.setItem('cot2_auto', JSON.stringify(s)); } catch (e) {} };
+  const autosave = () => { try { localStorage.setItem(key('auto'), JSON.stringify(s)); } catch (e) {} };
   function load(key) { try { const d = JSON.parse(localStorage.getItem(key)); if (d && G.ROOMS[d.room]) return d; } catch (e) {} return null; }
   function openSlots(mode) {
     $('slots-title').textContent = mode === 'save' ? 'Save game' : 'Restore game';
     const box = $('slot-list'); box.innerHTML = '';
-    const keys = (mode === 'restore' ? [['cot2_auto', 'Autosave']] : []).concat([1, 2, 3].slice(0, SLOTS).map(i => ['cot2_slot' + i, 'Slot ' + i]));
+    const keys = (mode === 'restore' ? [[key('auto'), 'Autosave']] : []).concat([1, 2, 3].slice(0, SLOTS).map(i => [key('slot' + i), 'Slot ' + i]));
     keys.forEach(([key, label]) => {
       const d = load(key), b = document.createElement('button');
       b.textContent = `${label}: ${d ? `${G.ROOMS[d.room].name}, ${d.score} points` : 'empty'}`;
@@ -378,6 +387,7 @@
     $('m-music').textContent = 'Music: ' + (M.on ? 'On' : 'Off');
     $('m-talk').textContent = 'Dialogue: ' + { text: 'Text only', both: 'Text & Speech', speech: 'Speech only' }[talkMode];
     $('m-bar').textContent = 'Icon bar: ' + (pinned ? 'Always shown' : 'Drops down');
+    $('m-explorer').textContent = 'Sparkles: ' + (explorer ? 'On' : 'Off');
     $('m-vol').value = volume; $('m-spd').value = speed;
   };
   $('m-sound').addEventListener('click', () => { soundOn = !soundOn; localStorage.setItem('cot_sound', soundOn ? 'on' : 'off'); toggleLabel(); });
@@ -392,7 +402,7 @@
 
   function startFrom(state) {
     s = state; item = null; walking = null; scene = null; mapOpen = false; setVerb('walk'); closePanels(); busy = false;
-    updateScore(); status(); renderItem(); syncMapBtn(); fade = 1; M.start(themeFor());
+    updateScore(); status(); renderItem(); syncMapBtn(); fade = 1; M.start(themeFor()); playing = true;
   }
   function newGame() { startFrom(G.newState()); showMsgs(G.enter(s, { to: 'beach', x: 160, y: 172 }) || []); }
 
@@ -423,16 +433,64 @@
   function skipIntro() { queue = []; afterMsgs = null; $('msg').hidden = true; scene = null; newGame(); }
   $('intro-skip').addEventListener('click', e => { e.stopPropagation(); if (scene) skipIntro(); });
   $('t-new').addEventListener('click', playIntro);
-  $('t-continue').addEventListener('click', () => { const d = load('cot2_auto'); if (d) startFrom(d); });
-  $('t-continue').hidden = !load('cot2_auto');
+  $('t-continue').addEventListener('click', () => { const d = load(key('auto')); if (d) startFrom(d); });
+  const syncTitle = () => { const d = load(key('auto')); $('t-continue').hidden = !d; $('t-continue').textContent = player ? 'Continue as ' + player : 'Continue'; };
+  $('t-name').value = player; $('t-explorer').checked = explorer; syncTitle();
+  $('t-name').addEventListener('input', e => { e.target.value = e.target.value.replace(/[^\p{L}\p{N} ]/gu, ''); player = clean(e.target.value); localStorage.setItem('cot_player', player); syncTitle(); });
+  const setExplorer = on => { explorer = on; localStorage.setItem('cot_explorer', on ? 'on' : 'off'); $('t-explorer').checked = on; toggleLabel(); };
+  $('t-explorer').addEventListener('change', e => setExplorer(e.target.checked));
+  $('m-explorer').addEventListener('click', () => setExplorer(!explorer));
+
+  // ---------- death album ----------
+  function openAlbum(back) {
+    const got = album(), box = $('album-list'); box.innerHTML = '';
+    G.DEATHS.forEach(([, title]) => { const li = document.createElement('li'); const f = got.includes(title); li.textContent = f ? title : '? ? ?'; li.className = f ? 'found' : ''; box.append(li); });
+    $('album-count').textContent = `${player ? player + ' has' : 'You have'} found ${got.length} of ${G.DEATHS.length} ways to die. Try everything!`;
+    $('album-close').onclick = () => { if (back) openPanel(back); else closePanels(); };
+    openPanel('album');
+  }
+  $('m-album').addEventListener('click', () => openAlbum());
+  $('d-album').addEventListener('click', () => openAlbum('death'));
+
+  // ---------- family scoreboard ----------
+  let lastPost = 0;
+  function postScore(force) {
+    if (!player || (!force && Date.now() - lastPost < 60000)) return;
+    lastPost = Date.now();
+    window.Board.post({ name: player, score: s.score, ending: s.won || '', secs: Math.round(s.secs || 0), deaths: album().length });
+  }
+  function openBoard(back) {
+    const rows = $('board-rows'); rows.innerHTML = '';
+    $('board-note').textContent = window.Board.on ? 'Fetching scores...' : 'The scoreboard is not set up yet.';
+    $('board-close').onclick = () => { if (back) openPanel(back); else closePanels(); };
+    openPanel('board');
+    if (!window.Board.on) return;
+    if (playing) postScore(true);
+    const me = window.Board.dev() + ':' + player.toLowerCase();
+    window.Board.list().then(list => {
+      $('board-note').textContent = list.length ? (player ? '' : 'Type your name on the title screen to join the board.') : 'No scores yet. Be the first!';
+      list.slice(0, 30).forEach((r, i) => {
+        const tr = document.createElement('tr'); if (r.id === me) tr.className = 'me';
+        [i + 1, r.name, r.score, r.ending === 'long' ? 'Happily ever after' : r.ending === 'short' ? 'The End?' : 'still playing', clock(r.secs), r.deaths + ' of ' + G.DEATHS.length]
+          .forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.append(td); });
+        rows.append(tr);
+      });
+    }).catch(() => { $('board-note').textContent = 'Could not reach the scoreboard. Your game is fine; try again later.'; });
+  }
+  $('t-board').addEventListener('click', () => openBoard('title'));
+  $('m-board').addEventListener('click', () => openBoard());
+  $('e-board').addEventListener('click', () => openBoard('end'));
 
   // ---------- death / endings ----------
   function die(text) {
-    sfx.die(); walking = null;
-    $('death-text').textContent = text;
+    sfx.die(); walking = null; playing = false;
+    const title = G.deathTitle(text), got = album(), fresh = title && !got.includes(title);
+    if (fresh) { got.push(title); try { localStorage.setItem('cot_album' + (player ? '_' + slug() : ''), JSON.stringify(got)); } catch (e) {} }
+    $('death-name').textContent = title ? `${fresh ? 'New death! ' : ''}“${title}” — ${got.length} of ${G.DEATHS.length} found` : '';
+    $('death-text').textContent = nameIt(text);
     openPanel('death');
   }
-  $('d-retry').addEventListener('click', () => { if (snapshot) startFrom(snapshot); });
+  $('d-retry').addEventListener('click', () => { if (snapshot) { snapshot.secs = s.secs; startFrom(snapshot); } });
   $('d-restore').addEventListener('click', () => openSlots('restore'));
   $('d-restart').addEventListener('click', newGame);
 
@@ -441,9 +499,11 @@
     short: ['The End?', 'Varrick is gone and Elowen is free. But the old king sleeps on in his tower, and the wedding waits for a father who cannot give his blessing.\n\nSomewhere, perhaps, a golden feather could have woken him.']
   };
   function win(kind) {
-    sfx.win(); M.start('title'); localStorage.removeItem('cot2_auto');
+    sfx.win(); M.start('title'); localStorage.removeItem(key('auto')); playing = false;
     $('end-title').textContent = ENDINGS[kind][0];
-    $('end-text').textContent = ENDINGS[kind][1];
+    $('end-text').textContent = nameIt(ENDINGS[kind][1]);
+    $('end-stats').textContent = `Time: ${clock(s.secs || 0)}. Deaths found: ${album().length} of ${G.DEATHS.length}.` + (kind === 'short' ? ' There is a happier ending to find.' : '');
+    postScore(true);
     $('end-score').textContent = `Final score: ${s.score} of ${G.MAX_SCORE}`;
     openPanel('end');
   }
@@ -476,6 +536,14 @@
       actors.sort((a, b) => a.y - b.y).forEach(a => a.d(cx));
       if (room.post && (!painted || s.room === 'tunnel' || s.room === 'mistshore')) room.post(cx, s, t);
       if (!painted && !G.ROOMS[s.room].outdoors && s.room !== 'tunnel') A.vignette(cx);
+      if (playing) s.secs = (s.secs || 0) + dt;
+      // Young explorer: a twinkle on everything that can be touched.
+      if (explorer && playing && !busy) G.spotsIn(s, s.room).forEach((sp, i) => {
+        if (!sp.rect || sp.id === 'sea') return;
+        const a = (Math.sin(t * 3 + i * 1.7) + 1) / 2, x = Math.round(sp.rect[0] + sp.rect[2] / 2), y = Math.round(sp.rect[1] + sp.rect[3] / 2), r = 1 + Math.round(a * 2);
+        cx.fillStyle = `rgba(20,12,40,${0.25 + a * 0.45})`; cx.fillRect(x - r - 1, y - 1, r * 2 + 3, 3); cx.fillRect(x - 1, y - r - 1, 3, r * 2 + 3);   // dark edge so it shows on sand and sky
+        cx.fillStyle = `rgba(255,250,210,${0.55 + a * 0.45})`; cx.fillRect(x - r, y, r * 2 + 1, 1); cx.fillRect(x, y - r, 1, r * 2 + 1);
+      });
     }
     // VGA finish: grain + this scene's own 256-colour palette with ordered dither.
     const f = s.flags; window.VGA.finish(cx, (typeof scene === 'function' ? 'cine' + INTRO.findIndex(x => A.cine[x[0]] === scene) : s.room) + (f.lit ? 'L' : '') + (f.beaten ? 'B' : '') + (s.won ? 'W' : '') + (f.clock ? 'C' : '') + (f.summoned ? 'S' : ''));

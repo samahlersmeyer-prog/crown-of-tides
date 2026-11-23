@@ -19,4 +19,7 @@ Original Sierra-style point-and-click adventure (inspired by King's Quest VI). P
 - `js/music.js` — chiptune sequencer, one original theme per island
 - `test/walkthrough.test.js` — plays both endings (long = 231/231) and checks deaths, exits, walk boxes
 
-Run tests: `node test/walkthrough.test.js`. Keep characters, story and art original — no Sierra assets or characters.
+- `js/board.js` + `tools/scoreboard.gs` — family scoreboard (Apps Script web app)
+- `test/stuck.test.js` — random play, then proves the game can still be won (no dead ends)
+
+Run tests: `node test/walkthrough.test.js && node test/stuck.test.js`. Keep characters, story and art original — no Sierra assets or characters.

@@ -1282,6 +1282,21 @@
   };
 
   // Apply a verb to a hotspot. Mutates s.
+  // Every way to die, with a title for the death album. Matched on a phrase from the death text.
+  const DEATHS = [
+    ['refreshing swim', 'Lost at Sea'], ['turquoise lagoon', 'Lagoon Lunch'], ['Tide Wardens are small', 'Five Against One'],
+    ['pitch-black tunnel', 'Mind the Gap'], ['climb down the cliff', 'A Better Look'], ['coins from the fountain', 'Wishing Well Robber'],
+    ['pretty light', 'Follow the Light'], ['touch the turning gear', 'Gear Trouble'], ['pat the chick', 'Bird Food'],
+    ['The chick shrieks', 'Feather Thief'], ['touch the spider', 'Lunch Introduces Itself'], ['pluck a strand', 'Stuck on You'],
+    ['reach into the Great Forge', 'Hot Hands'], ['shove the goat', 'Goat 1, You 0'], ['pat the hound', 'Bad Dog'],
+    ['wave it at the hound', 'Hound Offended'], ['doors of the Great Hall', 'Uninvited Guest'], ['how deep it goes', 'Deep Thoughts'],
+    ['you say politely', 'Polite to a Fault'], ['friendly shake', 'Wakey Wakey'], ['I object!', 'Objection Overruled'],
+    ['punch the groom', 'Wedding Crasher'], ['wave the letter at Varrick', 'What Letter?'], ['talk about this', 'Negotiations Fail'],
+    ['charge Varrick', 'Sea Urchin'], ['hold it up at Varrick', 'Wrong Prop'], ['slip past the hound', 'Tiptoe Fail'],
+    ['stair. Halfway up', 'The Wrong Stair']
+  ];
+  const deathTitle = text => { const d = DEATHS.find(([k]) => text.includes(k)); return d ? d[1] : null; };
+
   function act(s, spotId, verb, item) {
     const sp = findSpot(s, spotId);
     if (!sp) return say(DEFAULTS[verb] || '');
@@ -1326,6 +1341,6 @@
     return e ? e(s) : null;
   }
 
-  const api = { MAX_SCORE, ITEMS, ROOMS, ISLES, newState, act, choose, travel, canSail, enter, hitSpot, findSpot, spotsIn, has, invAct, hints, path, freeAt };
+  const api = { MAX_SCORE, ITEMS, ROOMS, ISLES, newState, act, choose, travel, canSail, enter, hitSpot, findSpot, spotsIn, has, invAct, hints, path, freeAt, DEATHS, deathTitle };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Game = api;
 })(this);

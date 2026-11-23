@@ -2,7 +2,11 @@
 const assert = require('assert');
 const G = require('../js/game.js');
 
-function step(s, [spot, verb, item]) {
+const SOLUTION = [];   // [room, step] for every step of the long ending (used by stuck.test.js)
+let recording = false;
+function step(s, st) {
+  const [spot, verb, item] = st;
+  if (recording && spot[0] !== '@' || recording && (spot === '@choose' || spot === '@sail')) SOLUTION.push([s.room, st]);
   if (spot === '@choose') { const r = G.choose(s, verb, item); assert(!r.die, `died choosing ${verb}/${item}`); if (r.go) G.enter(s, r.go); return r; }
   if (spot === '@notsummoned') { assert(!s.flags.summoned, 'wardens should block the whistle'); return {}; }
   if (spot === '@reply') { assert(G.has(s, 'reply') && G.has(s, 'ribbon'), 'Elowen should answer once you come back'); return {}; }
@@ -33,9 +37,14 @@ function toTower(s) {
   assert(G.has(s, 'compass') && G.has(s, 'lantern'), 'Hester gives the map and hands the lantern back');
   assert(play(s, [['boat', 'walk']]).map, 'boat should open the map once you have it');
   play(s, [['@sail', 'sentinels']]);
-  const r = play(s, [['kelp', 'hand'], ['granite', 'talk'], ['@choose', 'ask_granite', 'other']]);
+  play(s, [['kelp', 'hand']]);
+  const was = recording; recording = false;
+  const r = play(s, [['granite', 'talk'], ['@choose', 'ask_granite', 'other']]);
   const said = r.say[0][1].includes('LEFT') ? 'left' : 'right';
   play(s, [[said === 'left' ? 'right' : 'left', 'walk']]);
+  recording = was;
+  // the sentinel riddle depends on the game's random layout, so the solver gets it as a function
+  if (recording) SOLUTION.push(['sentbase', (st, attempt) => attempt(st, c => G.act(c, c.flags.safe, 'walk'))]);
   assert.strictEqual(s.room, 'ledge');
   assert(!play(s, [['up', 'walk']]).go, 'the goat should block the ledge');
   play(s, [['goat', 'item', 'bun'], ['up', 'walk'],
@@ -62,8 +71,9 @@ function toTower(s) {
 }
 
 // Long ending: full score.
-const s = fresh(); toTower(s);
+const s = fresh(); recording = true; toTower(s);
 play(s, [['king', 'item', 'feather']]);
+recording = false;
 assert.strictEqual(s.won, 'long');
 assert.strictEqual(s.score, G.MAX_SCORE, `score ${s.score} != ${G.MAX_SCORE}`);
 
@@ -163,4 +173,11 @@ for (const s0 of [fresh(), (() => { const z = fresh(); toTower(z); return z; })(
 // Bram has an opinion on everything.
 { const z = G.newState(); z.room = 'shop'; for (const id of Object.keys(G.ITEMS)) { if (['bottle', 'seaglass', 'compass'].includes(id)) continue; z.inv = [id]; const r = G.act(z, 'bram', 'item', id); assert(r.say && !/Not much call/.test(r.say[0][1]), 'Bram has nothing to say about ' + id); } }
 
-console.log('walkthrough ok — long ending', s.score, 'of', G.MAX_SCORE, '| short ending', t.score);
+// Every death in the source has exactly one album title, and every title is used.
+{ const src = require('fs').readFileSync(__dirname + '/../js/game.js', 'utf8'), used = new Set();
+  const texts = src.split('\n').filter(l => /die: (death \|\| )?'|LAGOON_DEATH = '/.test(l)).map(l => l.slice(l.search(/die: |LAGOON_DEATH = /)).replace(/\\'/g, "'"));
+  assert(texts.length >= 28, 'found only ' + texts.length + ' deaths');
+  for (const x of texts) { const hits = G.DEATHS.filter(([k]) => x.includes(k)); assert.strictEqual(hits.length, 1, 'death needs exactly one title: ' + x.slice(0, 60)); used.add(hits[0][1]); }
+  assert.strictEqual(used.size, G.DEATHS.length, 'unused death titles'); }
+module.exports = { SOLUTION };
+if (require.main === module) console.log('walkthrough ok — long ending', s.score, 'of', G.MAX_SCORE, '| short ending', t.score);

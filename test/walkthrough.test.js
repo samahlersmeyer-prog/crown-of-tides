@@ -4,6 +4,7 @@ const G = require('../js/game.js');
 
 function step(s, [spot, verb, item]) {
   if (spot === '@choose') { const r = G.choose(s, verb, item); assert(!r.die, `died choosing ${verb}/${item}`); if (r.go) G.enter(s, r.go); return r; }
+  if (spot === '@notsummoned') { assert(!s.flags.summoned, 'wardens should block the whistle'); return {}; }
   if (spot === '@sail') { const r = G.travel(s, verb); assert(r.go, `could not sail to ${verb} from ${s.room}`); G.enter(s, r.go); return r; }
   const r = G.act(s, spot, verb, item);
   assert(!r.die, `died at ${s.room}/${spot}/${verb}: ${r.die}`);
@@ -17,28 +18,31 @@ function fresh() { const s = G.newState(); G.enter(s, { to: 'beach', x: 160, y: 
 function toTower(s) {
   play(s, [
     ['wreck', 'hand'], ['bottle', 'hand'], ['conch', 'hand'], ['east', 'walk'], ['board', 'look'], ['shop', 'walk'],
-    ['bram', 'item', 'bottle'], ['door', 'walk'], ['inn', 'walk'], ['marla', 'talk'], ['fennick', 'talk'], ['out', 'walk'],
+    ['bram', 'item', 'bottle'], ['door', 'walk'], ['inn', 'walk'], ['marla', 'talk'], ['fennick', 'talk'], ['jar', 'hand'], ['out', 'walk'],
     ['south', 'walk'], ['nell', 'item', 'token'],
     ['boat', 'walk'], ['@choose', 'ferry', 'mists'],
     ['glowcaps', 'hand'], ['cave', 'walk'], ['sibyl', 'talk'], ['sibyl', 'item', 'conch'], ['out', 'walk'],
-    ['west', 'walk'], ['weft', 'item', 'glowcap'], ['east', 'walk'],
+    ['west', 'walk'], ['weft', 'item', 'glowcap'], ['stinkhorn', 'hand'], ['east', 'walk'],
     ['boat', 'walk'], ['west', 'walk'], ['inn', 'walk'], ['fennick', 'item', 'thread'], ['out', 'walk'], ['south', 'walk'],
     ['boat', 'walk'], ['@choose', 'ferry', 'clocks'],
     ['workshop', 'walk'], ['pim', 'talk'], ['door', 'walk'], ['tower', 'walk'], ['gear', 'item', 'oilcan'], ['out', 'walk'],
-    ['fishmonger', 'talk'], ['workshop', 'walk'], ['pim', 'talk'], ['back', 'walk'], ['forge', 'item', 'emptylantern'], ['west', 'walk'], ['door', 'walk'],
+    ['fishmonger', 'talk'], ['workshop', 'walk'], ['pim', 'talk'], ['bench', 'hand'], ['back', 'walk'], ['forge', 'item', 'emptylantern'], ['west', 'walk'], ['door', 'walk'],
     ['boat', 'walk'], ['shore', 'walk'], ['hester', 'item', 'lantern'], ['down', 'walk']
   ]);
   assert(G.has(s, 'compass') && G.has(s, 'lantern'), 'Hester gives the map and hands the lantern back');
   assert(play(s, [['boat', 'walk']]).map, 'boat should open the map once you have it');
   play(s, [['@sail', 'sentinels']]);
-  const r = play(s, [['granite', 'talk'], ['@choose', 'ask_granite', 'other']]);
+  const r = play(s, [['kelp', 'hand'], ['granite', 'talk'], ['@choose', 'ask_granite', 'other']]);
   const said = r.say[0][1].includes('LEFT') ? 'left' : 'right';
   play(s, [[said === 'left' ? 'right' : 'left', 'walk']]);
   assert.strictEqual(s.room, 'ledge');
   assert(!play(s, [['up', 'walk']]).go, 'the goat should block the ledge');
   play(s, [['goat', 'item', 'bun'], ['up', 'walk'],
     ['chick', 'item', 'fish'], ['feathers', 'hand'], ['down', 'walk'],
-    ['@sail', 'reef'], ['lagoon', 'item', 'whistle'], ['nerissa', 'talk'], ['nerissa', 'item', 'ring'],
+    ['@sail', 'reef'],
+    ['lagoon', 'item', 'whistle'], ['@notsummoned'],
+    ['goggle', 'item', 'prism'], ['lugs', 'item', 'rattler'], ['snoot', 'item', 'stinkhorn'], ['lick', 'item', 'pickle'], ['grabby', 'item', 'kelp'],
+    ['lagoon', 'item', 'whistle'], ['nerissa', 'talk'], ['nerissa', 'item', 'ring'],
     ['west', 'walk'], ['octopus', 'hand'], ['east', 'walk'],
     ['@sail', 'crown'], ['west', 'walk'], ['west', 'walk'], ['west', 'walk'],
     ['door', 'item', 'whistle'], ['door', 'walk'], ['stairs', 'walk'], ['stone', 'hand'], ['keys', 'hand'],
@@ -64,7 +68,7 @@ const t = fresh(); toTower(t);
 assert(play(t, [['down', 'walk']]).choose);
 play(t, [['@choose', 'leave', 'go']]);
 assert.strictEqual(t.won, 'short');
-assert.strictEqual(t.score, G.MAX_SCORE - 15);
+assert.strictEqual(t.score, G.MAX_SCORE - 12);
 
 // Both sentinel layouts work.
 for (const liar of ['granite', 'basalt']) for (const safe of ['left', 'right']) {
@@ -93,6 +97,7 @@ dies('aerie', {}, 'chick', 'hand');
 dies('tower', {}, 'varrick', 'item', 'feather');
 dies('sentbase', { safe: 'left' }, 'right', 'walk');
 dies('mistwood', {}, 'web', 'hand');
+dies('reef', {}, 'lick', 'hand');
 dies('mistwood', {}, 'weft', 'hand');
 dies('ledge', {}, 'goat', 'hand');
 dies('corridor', {}, 'kitchen', 'walk');

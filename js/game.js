@@ -28,6 +28,11 @@
     keys: { name: 'Key ring', desc: 'A heavy ring of castle keys, lifted from a sleeping guard. One of them is black, with a silver bow.' },
     coin: { name: 'Old coin', desc: 'A worn gold coin stamped with a smuggler\'s skull. Lucky, maybe.' },
     tabard: { name: 'Servant\'s tabard', desc: 'A sea-green tabard with the castle crest. Wearing it, you look like every other servant in the castle. That\'s the point.' },
+    prism: { name: 'Lamp prism', desc: 'A cracked glass prism from the lighthouse lamp. Hold it up to the sun and it throws a dazzling flash of rainbow light.' },
+    rattler: { name: 'Clockwork rattler', desc: 'Pim\'s "DO NOT WIND" invention. Wind it and it makes the loudest, most horrible racket on any island. Pim says it was meant to be an alarm clock.' },
+    stinkhorn: { name: 'Stinkhorn', desc: 'A Mistwood mushroom that smells like a fish that died of embarrassment inside an old boot. Your eyes water just holding it.' },
+    pickle: { name: 'Fire pickle', desc: 'One of Marla\'s famous fire pickles, pickled in pepper, vinegar and something she won\'t name. Sailors dare each other to eat them. Most lose.' },
+    kelp: { name: 'Cold kelp', desc: 'A slimy strip of kelp from the Sentinel rocks, cold as the deep sea and clammy to the touch.' },
     lantern: { name: 'Forge lantern', desc: 'A brass lantern holding a living ember from the Clockmakers\' forge. It never goes out and it never burns your fingers.' },
     fish: { name: 'Silver fish', desc: 'A plump silver fish, wrapped in paper. It smells exactly like a fish.' },
     compass: { name: 'Magic map', desc: 'Hester\'s magic map of the Tidewater Isles. The ink moves with the tides, and the little compass rose always points the way home. Touch an island on it, outdoors, and the map carries you there.' },
@@ -65,6 +70,29 @@
     : home === 'docks' ? (flag(s, 'paid') ? { choose: ferryChoice } : say(['nell', 'Oi! Token first!']))
       : { say: ['You climb back aboard and the ferry carries you to Saltmarrow.'], go: { to: 'docks', x: 180, y: 170 } };
   const ferryChoice = { id: 'ferry', prompt: '"Where to?" asks the ferrywoman.', options: [['mists', 'The Isle of Mists'], ['clocks', 'The Isle of Clocks'], ['stay', 'Nowhere yet']] };
+
+  // ---- the Tide Wardens: one for each sense ----
+  const WARDEN = (id, name, sense, rect, at, look, taunt, beat, wrong) => ({
+    id, name, rect, at, gone: s => flag(s, 'w_' + id),
+    look: () => say(look),
+    talk: () => say([id, taunt]),
+    hand: () => ({ die: 'You try to shove the ' + name + ' aside.\n\nThe Tide Wardens are small, but there are five of them, and they have been waiting all year for someone to drag into the lagoon.' }),
+    item: (s, i) => {
+      if (i !== beat[0]) return say([id, wrong]);
+      lose(s, i); set(s, 'w_' + id); pts(s, 'w_' + id, 4);
+      const lines = [beat[1]];
+      if (!wardensLeft(s)) lines.push('The last of the Tide Wardens flees into the surf. The beach is clear, all the way to the lagoon.');
+      return say(...lines);
+    }
+  });
+  const WARDENS = [
+    WARDEN('goggle', 'sight warden', 'sight', [104, 150, 24, 30], [116, 188], 'Goggle, the warden of sight: one huge unblinking eye, the size of a dinner plate.', 'I SEE you, land-folk! I see everything! Nothing gets past this eye!', ['prism', 'You hold Hester\'s prism up to the sun. A blaze of rainbow light flashes straight into Goggle\'s enormous eye.\n"AAGH! COLORS! TOO MANY COLORS!" He staggers in circles and dives into the sea.'], 'I can see that won\'t work!'),
+    WARDEN('lugs', 'hearing warden', 'hearing', [134, 144, 26, 30], [146, 188], 'Lugs, the warden of hearing: two ears like sails, twitching at every sound.', 'I can hear your heart beating, land-folk! Ba-dum, ba-dum!', ['rattler', 'You wind Pim\'s rattler and set it down. It explodes into the most horrible racket ever made: bells, bangs, squeals and a noise like a goose falling down stairs.\nLugs clamps his ears shut, howls, and bolts into the waves.'], 'I hear you fumbling. Pathetic!'),
+    WARDEN('snoot', 'smell warden', 'smell', [164, 150, 26, 30], [176, 188], 'Snoot, the warden of smell: a nose like a prize parsnip, sniffing the air constantly.', 'I smell land-folk! Sweat and leather and... is that a shipwreck?', ['stinkhorn', 'You wave the stinkhorn under Snoot\'s magnificent nose.\nHis eyes cross. His knees wobble. "That... is... the most beautiful..." he gasps, and keels over backwards into a tide pool. The others drag him away.'], 'Smells like failure!'),
+    WARDEN('lick', 'taste warden', 'taste', [194, 144, 26, 30], [206, 188], 'Lick, the warden of taste: a tongue as long as your arm, licking everything in reach.', 'I taste intruders! Give me a lick and I\'ll know what you are!', ['pickle', 'You offer Lick the fire pickle. He snatches it and crunches it with relish.\nThere is a pause. His face goes pink, then red, then a purple you didn\'t know faces could go. Steam comes out of his ears. He sprints into the lagoon and stays under for a very long time.'], 'Tastes like a trick! Bleh!'),
+    WARDEN('grabby', 'touch warden', 'touch', [222, 152, 28, 30], [232, 190], 'Grabby, the warden of touch: two huge, twitchy hands, always reaching.', 'Let me feel your hand, land-folk! Warm hands mean land-folk! Cold hands mean sea-folk!', ['kelp', 'You wrap your hand in the cold, slimy kelp and offer it to Grabby.\nHe shakes it. He shivers. "Oh! Cold and clammy! Sorry, cousin, didn\'t recognize you!" He waves you through and wanders off along the beach, still shaking out his fingers.'], 'Warm! Warm and land-ish! Nice try!')
+  ];
+  const wardensLeft = s => WARDENS.filter(w => !flag(s, 'w_' + w.id)).length;
 
   const ROOMS = {
     // ================= ISLE OF THE CROWN =================
@@ -121,7 +149,7 @@
           item: (s, i) => {
             if (i !== 'whistle') return null;
             if (flag(s, 'door_open')) return say('The door is already open.');
-            set(s, 'door_open'); pts(s, 'door', 8);
+            set(s, 'door_open'); pts(s, 'door', 6);
             return say('You put the silver whistle to your lips and play the three etched notes. The carved notes on the rock glow one by one, and with a deep grinding sound the door rolls aside.');
           },
           walk: s => {
@@ -364,7 +392,16 @@
           hand: () => say(['pim', 'Hands off the beard!']),
           item: (s, i) => i === 'ring' ? say(['pim', 'Lovely engraving. Shoddy clasp, though. I could fix that.']) : say(['pim', 'Fascinating. No.'])
         },
-        { id: 'bench', name: 'workbench', rect: [60, 100, 100, 40], look: () => say('A clockwork bird with no head. A teapot with legs. Something labelled "DO NOT WIND."'), hand: () => say(['pim', 'Don\'t touch that! Or that! Especially not that!']) }
+        {
+          id: 'bench', name: 'workbench', rect: [60, 100, 100, 40], at: [110, 170],
+          look: s => say(has(s, 'rattler') || flag(s, 'got_rattler') ? 'A clockwork bird with no head and a teapot with legs. The "DO NOT WIND" thing is gone, because you have it.' : 'A clockwork bird with no head. A teapot with legs. Something labelled "DO NOT WIND."'),
+          hand: s => {
+            if (flag(s, 'got_rattler')) return say(['pim', 'Don\'t touch the teapot. It bites.']);
+            if (!flag(s, 'clock')) return say(['pim', 'Don\'t touch that! Or that! Especially not that!']);
+            set(s, 'got_rattler'); gain(s, 'rattler');
+            return say(['pim', 'Oh, you want the rattler? Take it, take it! It was supposed to be an alarm clock, but it\'s so loud it woke the dead in three villages. They complained.'], ['pim', 'Wind it if you ever need to deafen something. Not near me.']);
+          }
+        }
       ]
     },
 
@@ -380,7 +417,7 @@
           item: (s, i) => {
             if (i !== 'oilcan') return null;
             if (flag(s, 'clock')) return say('It\'s running beautifully already.');
-            set(s, 'clock'); lose(s, 'oilcan'); pts(s, 'clock', 12);
+            set(s, 'clock'); lose(s, 'oilcan'); pts(s, 'clock', 10);
             return say('You oil every tooth of the great gear. Sand grinds, metal groans, and then, with a CLUNK you feel in your boots, the gear begins to turn.', 'Far above, the great clock strikes noon. Twelve booming notes roll across the island, and outside, the whole town starts moving again.');
           }
         },
@@ -401,6 +438,11 @@
         { id: 'basalt', name: 'Basalt, the right sentinel', rect: [230, 60, 50, 96], at: [254, 166], look: () => say('A sentinel of black basalt with a sly stone smile. It guards the right stair.'), talk: s => sentinelAsk(s, 'basalt'), hand: () => say('It\'s rock. You\'re not.') },
         { id: 'left', name: 'left stair', rect: [100, 40, 40, 116], at: [120, 160], look: () => say('A stair cut into the rock, winding up to the left.'), walk: s => climb(s, 'left'), hand: s => climb(s, 'left') },
         { id: 'right', name: 'right stair', rect: [180, 40, 40, 116], at: [200, 160], look: () => say('A stair cut into the rock, winding up to the right.'), walk: s => climb(s, 'right'), hand: s => climb(s, 'right') },
+        {
+          id: 'kelp', name: 'kelp', rect: [276, 172, 30, 14], at: [270, 180], gone: s => flag(s, 'got_kelp'),
+          look: () => say('Long ropes of kelp draped over the rocks, cold and slick from the deep water.'),
+          hand: s => { set(s, 'got_kelp'); gain(s, 'kelp'); return say('You peel off a strip of kelp. It is shockingly cold, and clammy in a way that feels personal.'); }
+        },
         { id: 'plaque', name: 'plaque', rect: [146, 130, 28, 16], at: [160, 160], look: () => say('"ONE OF US SPEAKS ONLY TRUTH. ONE OF US ONLY LIES. ONE STAIR IS SAFE. YOU MAY ASK ONE QUESTION."') }
       ]
     },
@@ -430,7 +472,7 @@
           look: () => say('Golden feathers tangled in the nest, glowing faintly like morning light.'),
           hand: s => {
             if (!flag(s, 'fed')) return { die: 'You reach for a golden feather. The chick shrieks, "THIEF!" in bird.\n\nThe mother roc drops out of the sky like a thunderbolt and carries you off to a much smaller island, which is mostly beak.' };
-            gain(s, 'feather'); pts(s, 'feather', 8);
+            gain(s, 'feather'); pts(s, 'feather', 7);
             return say('The mother roc watches as you take a single golden feather. She doesn\'t object. A gift, for feeding her child.', 'It\'s warm, and glows like the first light of morning.');
           }
         },
@@ -448,9 +490,10 @@
       name: 'The Coral Strand', isle: 'reef', scale: [150, 0.86, 194, 1.03],
       walk: [14, 150, 240, 194],
       block: [[40, 168, 60, 18]],
-      enter: s => once(s, 'seen_reef', ['A beach of pink coral sand. Rocks curl out into a turquoise lagoon. It is beautiful, and completely deserted.']),
+      enter: s => once(s, 'seen_reef', ['A beach of pink coral sand. Rocks curl out into a turquoise lagoon. It is beautiful, and completely deserted.', 'Then the sand erupts. Five knee-high creatures with fins for ears and seaweed for hair pop up in a line between you and the water.', ['goggle', 'HALT! We are the Tide Wardens! No land-folk may pass to the queen\'s lagoon!'], ['lugs', 'We\'d hear you!'], ['snoot', 'We\'d smell you!'], ['lick', 'We\'d taste you!'], ['grabby', 'We\'d FEEL you!'], 'Each one has one enormous feature: an eye, a pair of ears, a nose, a tongue, a pair of grabbing hands. Getting past all five is going to take some cunning.']),
       spots: [
-        { id: 'west', name: 'path to the tide pools', rect: [0, 120, 14, 80], at: [16, 170], exit: { to: 'tidepools', x: 294, y: 172 } },
+        { id: 'west', name: 'path to the tide pools', rect: [0, 120, 14, 80], at: [16, 170], walk: s => wardensLeft(s) ? say(['goggle', 'Oh no you don\'t!'], 'The wardens link arms and block the path.') : { go: { to: 'tidepools', x: 294, y: 172 } } },
+        ...WARDENS,
         { id: 'boat', name: 'boat', rect: [250, 160, 70, 40], at: [236, 178], look: () => say('Your boat, waiting in the shallows.'), hand: boatFrom('reef'), walk: boatFrom('reef') },
         {
           id: 'lagoon', name: 'lagoon', rect: [0, 60, 320, 60], at: [120, 156],
@@ -458,6 +501,7 @@
           talk: s => flag(s, 'summoned') ? null : say(['rowan', 'Hello?'], 'The lagoon is unmoved. The guidebook said the mer-folk answer only to music.'),
           item: (s, i) => {
             if (i !== 'whistle') return null;
+            if (wardensLeft(s)) return say('You raise the whistle, and five wardens scream "LAND-FOLK!" so loudly you can\'t hear yourself play. You\'ll have to deal with them first.');
             if (flag(s, 'summoned')) return say('Nerissa is already here.');
             set(s, 'summoned'); pts(s, 'summon', 4);
             return say('You play the three notes across the water. The lagoon goes still, then bubbles, and a woman with a crown of coral and a long silver tail rises and settles onto the rock.', ['nerissa', 'That song has not been played in a hundred years. Who are you, to know it?']);
@@ -472,7 +516,7 @@
           item: (s, i) => {
             if (i === 'ring') {
               if (flag(s, 'got_mirror')) return say(['nerissa', 'Yes, yes, a stag. I remember.']);
-              set(s, 'got_mirror'); gain(s, 'mirror'); pts(s, 'mirror', 8);
+              set(s, 'got_mirror'); gain(s, 'mirror'); pts(s, 'mirror', 7);
               return say(['nerissa', 'The stag of Thornmere. An honest house.'], 'She dives, and returns with a shell polished to a perfect mirror.', ['nerissa', 'The pearl\'s magic cannot touch a true reflection. When Varrick casts at you, hold this up. What is cast at you, send home.']);
             }
             if (i === 'fish') return say(['nerissa', 'Those are my subjects.'], 'You put the fish away, embarrassed.');
@@ -510,12 +554,17 @@
           hand: () => say(['fennick', 'Careful! The lute is the only thing I own that\'s in tune.']),
           item: (s, i) => {
             if (i === 'thread') {
-              lose(s, 'thread'); gain(s, 'songsheet'); set(s, 'strung'); pts(s, 'song', 8);
+              lose(s, 'thread'); gain(s, 'songsheet'); set(s, 'strung'); pts(s, 'song', 6);
               return say('Fennick strings his lute with the spider silk. It shines like moonlight.', ['fennick', 'Perfect pitch! Listen to this.'], 'He plays the gentlest lullaby you have ever heard. Marla yawns. You yawn. A cat by the fire falls asleep mid-stretch.', ['fennick', 'The Lullaby of the Isles. My grandmother sang it to sea-serpents. Here, I\'ve written it out for you.']);
             }
             if (i === 'coin') return say(['fennick', 'A tip! Wonderful. But I\'d rather have a string.']);
             return say(['fennick', 'That won\'t fix a lute.']);
           }
+        },
+        {
+          id: 'jar', name: 'pickle jar', rect: [272, 100, 16, 16], at: [270, 172],
+          look: () => say('A big jar on the bar: "MARLA\'S FIRE PICKLES. EAT ONE, DRINK FREE. NOBODY HAS EVER DRUNK FREE."'),
+          hand: s => { if (has(s, 'pickle') || flag(s, 'got_pickle')) return say(['marla', 'One per customer. For your own safety.']); set(s, 'got_pickle'); gain(s, 'pickle'); return say(['marla', 'Help yourself, love. Just don\'t eat it near the fire. Or near anything.'], 'You fish out a fire pickle. The jar seems relieved.'); }
         },
         { id: 'fire', name: 'fireplace', rect: [20, 70, 64, 74], look: () => say('A crackling fire. Above it hangs a painting of a very large fish that, according to the brass plaque, "GOT AWAY."') },
         { id: 'patrons', name: 'patrons', rect: [150, 120, 60, 30], look: () => say('An old sailor snores into his mug. Another is building a ship out of breadsticks. Neither looks like they\'ll be rejoicing today.') }
@@ -550,7 +599,12 @@
           look: () => say('Dew-pearled silk, strand after strand, each one shining like silver thread.'),
           hand: () => ({ die: 'You reach out to pluck a strand of the web.\n\nThe web plucks back. You are now part of Madame Weft\'s collection, wrapped up snug for later.\n\nPerhaps she would have simply traded.' })
         },
-        { id: 'trees', name: 'trees', rect: [0, 0, 100, 140], look: () => say('The trees are twisted into shapes that look almost like faces. Almost.') }
+        { id: 'trees', name: 'trees', rect: [0, 0, 100, 140], look: () => say('The trees are twisted into shapes that look almost like faces. Almost.') },
+        {
+          id: 'stinkhorn', name: 'stinkhorn mushroom', rect: [40, 166, 22, 16], at: [64, 178], gone: s => flag(s, 'got_stink'),
+          look: () => say('A tall, slimy mushroom. Even from here it smells like a fish that died of embarrassment inside an old boot. Flies are fainting around it.'),
+          hand: s => { set(s, 'got_stink'); gain(s, 'stinkhorn'); return say('Holding your breath, you pick the stinkhorn. Your eyes water. Somewhere, a skunk is jealous.'); }
+        }
       ]
     },
 
@@ -647,7 +701,7 @@
           item: (s, i) => {
             if (i === 'songsheet') {
               if (flag(s, 'hound')) return say('It\'s already asleep.');
-              set(s, 'hound'); pts(s, 'hound', 8);
+              set(s, 'hound'); pts(s, 'hound', 6);
               return say('You unfold Fennick\'s song sheet and, very quietly, sing the Lullaby of the Isles.', 'The hound\'s ears droop. Its eyes droop. Its whole enormous body droops. By the second verse it is flat on its side, snoring like a landslide.');
             }
             if (i === 'fish' || i === 'bun') return say('The hound isn\'t hungry. It\'s guarding. Big difference.');
@@ -803,7 +857,7 @@
           item: (s, i) => {
             if (i === 'letter') {
               if (!flag(s, 'trust')) return say(['orla', 'A forged scrap from a stranger who sneaked into the castle? Nice try.'], 'She doesn\'t even read it. You need someone she trusts to vouch for you.');
-              lose(s, 'letter'); set(s, 'unmasked'); pts(s, 'unmask', 8);
+              lose(s, 'letter'); set(s, 'unmasked'); pts(s, 'unmask', 6);
               return {
                 say: [
                   'Orla reads the letter. Her face goes from grey to red to a very dangerous white.',
@@ -840,7 +894,7 @@
           hand: () => ({ die: 'You charge Varrick. He flicks a finger, and you become a very surprised-looking sea urchin.\n\nWhat is cast at you, someone once said, send home.' }),
           item: (s, i) => {
             if (i === 'mirror') {
-              set(s, 'beaten'); pts(s, 'defeat', 15);
+              set(s, 'beaten'); pts(s, 'defeat', 12);
               return say('Varrick hurls a bolt of black lightning. You raise the mirror shell.', 'The bolt strikes the shell, rebounds, and slams into the black pearl at Varrick\'s throat. The pearl cracks, then shatters with a sound like breaking ice.', ['varrick', 'No... NO!'], 'Varrick shrinks, and shrinks, and when the light fades there is nothing on the floor but a small, furious crab, clicking at you.', 'The black cage around Elowen dissolves. She stumbles into your arms.');
             }
             return { die: 'You hold it up at Varrick. He seems unimpressed. The bolt of black lightning is the last thing you see.\n\nWhat is cast at you, someone once said, send home.' };
@@ -863,7 +917,7 @@
           item: (s, i) => {
             if (i !== 'feather') return null;
             if (!flag(s, 'beaten')) return say('Varrick\'s magic crackles between you and the bier. Deal with the sorcerer first.');
-            lose(s, 'feather'); s.won = 'long'; pts(s, 'king', 15);
+            lose(s, 'feather'); s.won = 'long'; pts(s, 'king', 12);
             return { say: [
               'You lay the Feather of Dawn on the sleeping king\'s chest. Golden light spills out of it like sunrise. The dark threads around him burn away.',
               'Outside, the storm clouds tear open, and real sunlight floods the tower.',
@@ -881,8 +935,8 @@
 
   function lightLamp(s) {
     if (flag(s, 'lit')) return say('The lamp is already blazing.');
-    set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); pts(s, 'lit', 10); pts(s, 'compass', 4);
-    return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], 'She hands the lantern back. A spark was all the great lamp needed.', ['hester', 'I promised anything I own. Take my magic map. My grandmother had it off a sea-witch. Touch an island on it, under open sky, and it\'ll carry you there.'], 'You can now use the magic map from any outdoor screen. Look for the map button on your icon bar.');
+    set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); gain(s, 'prism'); pts(s, 'lit', 8); pts(s, 'compass', 4);
+    return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], 'She hands the lantern back. A spark was all the great lamp needed.', ['hester', 'I promised anything I own. Take my magic map. My grandmother had it off a sea-witch. Touch an island on it, under open sky, and it\'ll carry you there.'], ['hester', 'And take this old prism. It cracked years ago, so I swapped it out, but it still throws a flash that could blind a gull.'], 'You can now use the magic map from any outdoor screen. Look for the map button on your icon bar.');
   }
 
   function houndCheck(s, go) {
@@ -945,7 +999,12 @@
     songsheet: { hand: () => say('You hum the lullaby under your breath, very quietly. Even that makes your eyelids heavy.'), talk: () => say('You\'d better save the singing for something with teeth.') },
     keys: { hand: () => say('A dozen keys. Pantry, armory, privy... and one black key with a silver bow. That one looks important.') },
     coin: { hand: () => say('You flip it. Skulls. Of course it\'s skulls.') },
-    tabard: { hand: () => say('You smooth down the tabard. You look exactly like a servant. Your father would be horrified.') }
+    tabard: { hand: () => say('You smooth down the tabard. You look exactly like a servant. Your father would be horrified.') },
+    prism: { hand: () => say('You tilt the prism. Rainbows skitter across everything. It\'s bright enough to make you see spots.') },
+    rattler: { hand: () => say('You are NOT winding that thing in your own hands. Pim was very clear.'), talk: () => say('It ticks at you menacingly.') },
+    stinkhorn: { hand: () => say('You sniff it, against your better judgment. Your better judgment was right.'), talk: () => say('Even talking near it makes your eyes water.') },
+    pickle: { hand: () => say('You lick it. Just once. Your tongue goes numb and your ears ring. You decide to save the rest for someone you dislike.') },
+    kelp: { hand: () => say('Cold. Slimy. Clammy. Holding it, your hand feels like it belongs to a fish.') }
   };
   const COMBOS = {
     'oilcan+ring': 'Now your ring is shiny AND slippery. That seems like a mistake.',
@@ -993,6 +1052,10 @@
     }
     if (!f('fed')) return H('How do I deal with the roc?', 'Hungry babies make angry mothers.', 'Give the silver fish to the roc chick.');
     if (!h('feather') && !f('pts_feather')) return H('Now what at the aerie?', 'The mother roc approves of you now.', 'Use the Hand on the golden feathers in the nest.');
+    if (f('compass') && wardensLeft(s)) {
+      const need = { goggle: ['How do I get past Goggle, the sight warden?', 'Dazzle that great eye. Hester gave you something that throws light.', 'Use the lamp prism on Goggle.'], lugs: ['How do I get past Lugs, the hearing warden?', 'Something so loud it hurts. Pim made one by accident.', 'Take the "DO NOT WIND" rattler from Pim\'s workbench (after the clock runs), then use it on Lugs.'], snoot: ['How do I get past Snoot, the smell warden?', 'Overwhelm that nose. Something in the Mistwood stinks.', 'Pick the stinkhorn mushroom in the Mistwood and use it on Snoot.'], lick: ['How do I get past Lick, the taste warden?', 'Give him a taste he\'ll never forget. Marla keeps a dare on the bar.', 'Take a fire pickle from the jar at the Drowned Sailor and give it to Lick.'], grabby: ['How do I get past Grabby, the touch warden?', 'Warm hands mean land-folk. Find something cold and clammy.', 'Peel some cold kelp off the rocks on Sentinel Isle and use it on Grabby.'] };
+      const w = WARDENS.find(x => !f('w_' + x.id)); return H(...need[w.id]);
+    }
     if (!f('got_mirror')) return H('What do I do on the Coral Strand?', 'The guidebook says the mer-folk answer only to music.', 'Use the silver whistle on the lagoon. Then show Queen Nerissa your signet ring.');
     if (!f('door_open')) return H('How do I get into the castle?', 'The Oracle mentioned a door that opens to a song.', 'Use the silver whistle on the carved door at the Singing Cliffs. You\'ll need a light inside.');
     if (!f('got_keys')) return H('What should I do in the cellar?', 'The guard is asleep. His belt isn\'t guarded.', 'Use the Hand on the key ring at the sleeping guard\'s belt. Don\'t touch or talk to the guard himself.');
@@ -1046,6 +1109,7 @@
       for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
         const ni = ci + di, nj = cj + dj, nk = key(ni, nj);
         if (!ok(ni, nj) || closed.has(nk)) continue;
+        if (di && dj && (!ok(ci + di, cj) || !ok(ci, cj + dj))) continue; // no cutting corners
         const ng = g[ck] + Math.hypot(di, dj);
         if (g[nk] === undefined || ng < g[nk]) { if (g[nk] === undefined) open.push([ni, nj]); g[nk] = ng; from[nk] = ck; }
       }

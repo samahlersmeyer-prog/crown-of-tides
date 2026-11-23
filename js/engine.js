@@ -54,7 +54,7 @@
   const updateScore = () => { $('score').textContent = `Score: ${s.score} of ${G.MAX_SCORE}`; };
 
   // ---------- messages with talker portraits ----------
-  const SPEAKER = { rowan: 'Rowan', bram: 'Old Bram', nell: 'Ferrywoman', oracle: 'The Oracle', pim: 'Pim', hester: 'Hester', fishmonger: 'Fishmonger', guard: 'Guard', granite: 'Granite', basalt: 'Basalt', nerissa: 'Queen Nerissa', elowen: 'Elowen', orla: 'Captain Orla', varrick: 'Varrick', king: 'King Aldous', marla: 'Marla', fennick: 'Fennick', weft: 'Madame Weft', anvil: 'Anvil', bertha: 'Bertha' };
+  const SPEAKER = { rowan: 'Rowan', bram: 'Old Bram', nell: 'Ferrywoman', oracle: 'The Oracle', pim: 'Pim', hester: 'Hester', fishmonger: 'Fishmonger', guard: 'Guard', granite: 'Granite', basalt: 'Basalt', nerissa: 'Queen Nerissa', elowen: 'Elowen', orla: 'Captain Orla', varrick: 'Varrick', king: 'King Aldous', marla: 'Marla', fennick: 'Fennick', weft: 'Madame Weft', anvil: 'Anvil', bertha: 'Bertha', goggle: 'Goggle', lugs: 'Lugs', snoot: 'Snoot', lick: 'Lick', grabby: 'Grabby' };
   function showMsgs(lines, then) {
     if (!lines || !lines.length) { if (then) then(); return; }
     queue = lines.slice(); afterMsgs = then || null; nextMsg();

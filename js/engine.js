@@ -406,12 +406,13 @@
       }
       const room = A.rooms[s.room];
       cx.clearRect(0, 0, 320, 200);
-      room.bg(cx, s, t);
+      const painted = A.drawRoom(cx, s.room, s, t);
+      if (!painted) room.bg(cx, s, t);
       const sc = scaleAt(s.y);
       const actors = (room.actors ? room.actors(s, t) : []).concat([{ y: s.y, d: c => A.player(c, s.x, s.y, frame, dir, sc) }]);
       actors.sort((a, b) => a.y - b.y).forEach(a => a.d(cx));
-      if (room.post) room.post(cx, s, t);
-      if (!G.ROOMS[s.room].outdoors && s.room !== 'tunnel') A.vignette(cx);
+      if (room.post && (!painted || s.room === 'tunnel' || s.room === 'mistshore')) room.post(cx, s, t);
+      if (!painted && !G.ROOMS[s.room].outdoors && s.room !== 'tunnel') A.vignette(cx);
     }
     // VGA finish: grain + this scene's own 256-colour palette with ordered dither.
     const f = s.flags; window.VGA.finish(cx, (typeof scene === 'function' ? 'cine' + INTRO.findIndex(x => A.cine[x[0]] === scene) : s.room) + (f.lit ? 'L' : '') + (f.beaten ? 'B' : '') + (s.won ? 'W' : '') + (f.clock ? 'C' : '') + (f.summoned ? 'S' : ''));

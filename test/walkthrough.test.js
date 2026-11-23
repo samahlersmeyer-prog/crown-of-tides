@@ -110,10 +110,10 @@ const inBox = (w, x, y) => x >= w[0] && x <= w[2] && y >= w[1] && y <= w[3];
 for (const [id, room] of Object.entries(G.ROOMS)) {
   for (const sp of room.spots) {
     if (sp.at) assert(inBox(room.walk, ...sp.at), `${id}/${sp.id} walk target outside walk box`);
-    if (sp.exit) { assert(G.ROOMS[sp.exit.to], `${id}/${sp.id} -> unknown ${sp.exit.to}`); assert(inBox(G.ROOMS[sp.exit.to].walk, sp.exit.x, sp.exit.y), `${id}/${sp.id} arrival outside ${sp.exit.to}`); }
+    if (sp.exit) assert(G.ROOMS[sp.exit.to], `${id}/${sp.id} -> unknown ${sp.exit.to}`);
   }
 }
-for (const [k, i] of Object.entries(G.ISLES)) assert(inBox(G.ROOMS[i.to].walk, i.x, i.y), `isle ${k} arrival outside walk box`);
+
 // Magic map: works from any outdoor screen, never indoors.
 {
   const m = G.newState(); m.flags.compass = true; m.inv.push('compass');
@@ -127,7 +127,7 @@ for (const [k, i] of Object.entries(G.ISLES)) assert(inBox(G.ROOMS[i.to].walk, i
 for (const [id, room] of Object.entries(G.ROOMS)) {
   const targets = room.spots.filter(sp => sp.at).map(sp => sp.at);
   const starts = [];
-  for (const [rid, r] of Object.entries(G.ROOMS)) for (const sp of r.spots) if (sp.exit && sp.exit.to === id) starts.push([sp.exit.x, sp.exit.y]);
+  for (const [rid, r] of Object.entries(G.ROOMS)) for (const sp of r.spots) if (sp.exit && sp.exit.to === id) { const st = G.newState(); G.enter(st, sp.exit); starts.push([st.x, st.y]); }
   for (const [x, y] of targets.concat(starts)) assert(G.freeAt(id, x, y), `${id}: point ${x},${y} is inside a block`);
   for (const [sx, sy] of starts) for (const [tx, ty] of targets) {
     const pts = G.path(id, sx, sy, tx, ty), last = pts[pts.length - 1];

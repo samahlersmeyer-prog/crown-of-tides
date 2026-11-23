@@ -5,6 +5,7 @@ const G = require('../js/game.js');
 function step(s, [spot, verb, item]) {
   if (spot === '@choose') { const r = G.choose(s, verb, item); assert(!r.die, `died choosing ${verb}/${item}`); if (r.go) G.enter(s, r.go); return r; }
   if (spot === '@notsummoned') { assert(!s.flags.summoned, 'wardens should block the whistle'); return {}; }
+  if (spot === '@reply') { assert(G.has(s, 'reply') && G.has(s, 'ribbon'), 'Elowen should answer once you come back'); return {}; }
   if (spot === '@sail') { const r = G.travel(s, verb); assert(r.go, `could not sail to ${verb} from ${s.room}`); G.enter(s, r.go); return r; }
   const r = G.act(s, spot, verb, item);
   assert(!r.die, `died at ${s.room}/${spot}/${verb}: ${r.die}`);
@@ -43,8 +44,11 @@ function toTower(s) {
     ['lagoon', 'item', 'whistle'], ['@notsummoned'],
     ['goggle', 'item', 'prism'], ['lugs', 'item', 'rattler'], ['snoot', 'item', 'stinkhorn'], ['lick', 'item', 'pickle'], ['grabby', 'item', 'kelp'],
     ['lagoon', 'item', 'whistle'], ['nerissa', 'talk'], ['nerissa', 'item', 'ring'],
-    ['west', 'walk'], ['octopus', 'hand'], ['east', 'walk'],
-    ['@sail', 'crown'], ['west', 'walk'], ['west', 'walk'], ['west', 'walk'],
+    ['west', 'walk'], ['octopus', 'hand'], ['seaglass', 'hand'], ['east', 'walk'],
+    ['@sail', 'crown'], ['west', 'walk'], ['shop', 'walk'], ['bram', 'talk'], ['@choose', 'talk_bram', 'wares'], ['bram', 'item', 'seaglass'], ['door', 'walk'],
+    ['south', 'walk'], ['shore', 'walk'], ['hester', 'talk'], ['@choose', 'talk_hester', 'gull'], ['down', 'walk'],
+    ['@sail', 'clocks'], ['@sail', 'crown'], ['shore', 'walk'], ['@reply'], ['down', 'walk'],
+    ['west', 'walk'], ['west', 'walk'], ['west', 'walk'],
     ['door', 'item', 'whistle'], ['door', 'walk'], ['stairs', 'walk'], ['stone', 'hand'], ['keys', 'hand'],
     ['back', 'walk'], ['back', 'walk'], ['east', 'walk'], ['east', 'walk'], ['fountain', 'item', 'coin'], ['west', 'walk'], ['west', 'walk'], ['door', 'walk'], ['stairs', 'walk'], ['stairs', 'walk'],
     ['hound', 'item', 'songsheet'], ['study', 'item', 'keys'], ['study', 'walk'], ['desk', 'hand'], ['out', 'walk'],
@@ -141,5 +145,19 @@ for (const [id, room] of Object.entries(G.ROOMS)) {
 for (const id of Object.keys(G.ITEMS)) { const h = G.newState(); h.inv.push(id); for (const v of ['look', 'hand', 'talk']) { const r = G.invAct(h, id, v); assert(r.say || r.map, `${id}/${v}`); } }
 assert.strictEqual(G.newState().inv.length, 0);
 { const h = fresh(); const seen = new Set(); seen.add(G.hints(h).q); toTower(h); seen.add(G.hints(h).q); assert(seen.size === 2 && G.hints(h).answer.includes('Feather')); }
+
+// Every conversation topic answers and loops back to its menu, early and late in the game.
+for (const s0 of [fresh(), (() => { const z = fresh(); toTower(z); return z; })()]) {
+  for (const [room, spot] of [['shop', 'bram'], ['inn', 'marla'], ['inn', 'fennick'], ['docks', 'nell'], ['oracle', 'sibyl'], ['lighthouse', 'hester'], ['reef', 'nerissa'], ['kitchen', 'bertha']]) {
+    const s1 = JSON.parse(JSON.stringify(s0)); s1.room = room; s1.flags.summoned = true; s1.flags.got_mirror = true; s1.flags.lit = true; s1.flags.got_tabard = true; s1.flags.got_bun = true; s1.flags.pts_oracle = true;
+    const r = G.act(s1, spot, 'talk'); assert(r.choose, `${room}/${spot} should open a topic menu`);
+    for (const [opt] of r.choose.options) { const a = G.choose(s1, r.choose.id, opt); if (opt !== 'bye') assert(a.say || a.choose, `${spot}/${opt}`); }
+  }
+}
+// The ribbon is an alternative to the ring for Elowen and Bertha.
+{ const z = G.newState(); z.room = 'hall'; z.inv.push('ribbon'); G.act(z, 'elowen', 'item', 'ribbon'); assert(z.flags.trust); }
+{ const z = G.newState(); z.room = 'kitchen'; z.inv.push('ribbon'); G.act(z, 'bertha', 'item', 'ribbon'); assert(G.has(z, 'tabard')); }
+// Bram has an opinion on everything.
+{ const z = G.newState(); z.room = 'shop'; for (const id of Object.keys(G.ITEMS)) { if (['bottle', 'seaglass', 'compass'].includes(id)) continue; z.inv = [id]; const r = G.act(z, 'bram', 'item', id); assert(r.say && !/Not much call/.test(r.say[0][1]), 'Bram has nothing to say about ' + id); } }
 
 console.log('walkthrough ok — long ending', s.score, 'of', G.MAX_SCORE, '| short ending', t.score);

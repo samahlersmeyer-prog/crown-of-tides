@@ -33,6 +33,10 @@
     stinkhorn: { name: 'Stinkhorn', desc: 'A Mistwood mushroom that smells like a fish that died of embarrassment inside an old boot. Your eyes water just holding it.' },
     pickle: { name: 'Fire pickle', desc: 'One of Marla\'s famous fire pickles, pickled in pepper, vinegar and something she won\'t name. Sailors dare each other to eat them. Most lose.' },
     kelp: { name: 'Cold kelp', desc: 'A slimy strip of kelp from the Sentinel rocks, cold as the deep sea and clammy to the touch.' },
+    seaglass: { name: 'Sea glass', desc: 'A smooth piece of green sea glass, frosted by the waves. It glows like a jewel when you hold it to the light.' },
+    parchment: { name: 'Parchment', desc: 'A sheet of good parchment and a stick of charcoal, from Bram. Enough for one short letter.' },
+    reply: { name: 'Elowen\'s letter', desc: 'In a quick, slanted hand: "Rowan. Pip found me. I\'m watched every hour. Varrick tells everyone Father is dying, but at night I hear him boast that Father merely SLEEPS, in the tower. He keeps his secrets in his study, and the key never leaves the guard who sleeps in the cellar. He will not have a mirror in any room, not even for the wedding. Wear my ribbon. Bertha in the kitchen will know it, and so will I. Hurry. Sundown. E."' },
+    ribbon: { name: 'Sea-green ribbon', desc: 'A ribbon of sea-green silk that smells faintly of roses. Elowen\'s.' },
     lantern: { name: 'Forge lantern', desc: 'A brass lantern holding a living ember from the Clockmakers\' forge. It never goes out and it never burns your fingers.' },
     fish: { name: 'Silver fish', desc: 'A plump silver fish, wrapped in paper. It smells exactly like a fish.' },
     compass: { name: 'Magic map', desc: 'Hester\'s magic map of the Tidewater Isles. The ink moves with the tides, and the little compass rose always points the way home. Touch an island on it, outdoors, and the map carries you there.' },
@@ -71,6 +75,115 @@
       : { say: ['You climb back aboard and the ferry carries you to Saltmarrow.'], go: { to: 'docks', x: 180, y: 170 } };
   const ferryChoice = { id: 'ferry', prompt: '"Where to?" asks the ferrywoman.', options: [['mists', 'The Isle of Mists'], ['clocks', 'The Isle of Clocks'], ['stay', 'Nowhere yet']] };
 
+  // ---- conversations: Talk opens a topic menu, and each answer loops back to it ----
+  const TALKS = {};
+  function openTalk(s, who, lead) {
+    const T = TALKS[who], list = T.topics(s).filter(Boolean);
+    const r = { choose: { id: 'talk_' + who, prompt: T.prompt, options: list.map(([k, l]) => [k, l]).concat([['bye', 'Goodbye']]) } };
+    if (lead && lead.length) r.say = lead;
+    return r;
+  }
+  const L = (who, ...lines) => lines.map(x => [who, x]);
+
+  TALKS.bram = { prompt: 'Ask Old Bram about...', topics: s => [
+    ['wares', 'What will you trade?', s => {
+      const out = L('bram', 'Bram trades fair, lad. Bring me what the sea gives up and I\'ll find you something useful for it.');
+      if (!flag(s, 'traded')) out.push(['bram', 'A message in a bottle buys a ferry token. Nothing like a stranger\'s secrets.']);
+      if (!flag(s, 'traded_glass')) out.push(['bram', 'Parchment and charcoal, for a nice piece of sea glass. The tide pools past the Coral Strand are thick with it, so the mer-folk say. Somebody might want to write a letter one day.']);
+      out.push(['bram', 'And bring me anything else you find. I\'ll tell you what it\'s worth, even if I don\'t want it. Especially then.']);
+      return out;
+    }],
+    ['town', 'What\'s happening in town?', s => flag(s, 'lit')
+      ? L('bram', 'Hester\'s light is burning again! The Steward\'s men came stamping down the docks about it. First smile I\'ve seen in Saltmarrow in weeks.')
+      : L('bram', 'A wedding nobody wants, a king nobody\'s allowed to see, and a lighthouse that\'s been dark for six weeks. You\'re the fourth wreck since it went out. Hester\'s fit to spit.')],
+    ['varrick', 'Tell me about the Steward.', () => L('bram', 'Varrick turned up three years ago with nothing but a black coat and a black pearl. A month after he was made Steward, the king took ill. Make of that what you will.', 'Never seen him without that pearl. Never seen him look in a mirror, either. Vain men usually can\'t stop.')],
+    ['isles', 'Tell me about the isles.', () => L('bram', 'The Oracle lives on the Isle of Mists. She listens to shells. The Clockmakers have the only fire that never dies. Sentinel Isle\'s got two stone liars, well, one liar. And the mer-folk on the Coral Strand only come up for music.')],
+    flag(s, 'got_reply') && ['elowen', 'Have you heard from the princess?', () => L('bram', 'The princess? She used to come in here as a girl and try on the mermaid\'s comb. Said one day a prince would come out of a mirror for her.', 'Huh. Look at you.')]
+  ] };
+
+  TALKS.marla = { prompt: 'Ask Marla about...', topics: s => [
+    ['gossip', 'Any gossip?', () => L('marla', 'The princess used to slip down here in a cloak and pretend nobody knew her. Bertha, the castle cook, would come fetch her. Thick as thieves, those two.', 'If you ever need a friend inside the castle, it\'s Bertha.')],
+    ['castle', 'What\'s the castle like inside?', () => L('marla', 'Servants\' hall runs from the cellar up to the gallery. Varrick keeps that great hound in it. My cousin\'s lad guards the cellar, and from what I hear he spends the whole night asleep with a mug of wedding wine.', 'He keeps the castle keys on his belt, too. Silly boy.')],
+    ['king', 'What happened to the king?', () => L('marla', 'Took to his bed three weeks after Varrick took the Steward\'s chain. Nobody\'s seen him since. "Too ill for visitors." I\'ve seen ill. That\'s not ill, that\'s hidden.')],
+    ['fennick', 'What\'s wrong with the bard?', s => flag(s, 'strung') ? L('marla', 'He\'s playing again, bless him. Put the cat to sleep for a whole day.') : L('marla', 'Broke his best string and won\'t shut up about it. Says only spider silk will do. Spiders! In the Mistwood! He\'d sooner eat his lute.')]
+  ] };
+
+  TALKS.fennick = { prompt: 'Ask Fennick about...', topics: s => [
+    ['string', flag(s, 'strung') ? 'That lullaby...' : 'Your broken string?', s => flag(s, 'strung')
+      ? L('fennick', 'The Lullaby of the Isles works on anything with teeth. Sea-serpents, wolves, tax collectors. Sing it soft, sing it all the way through.')
+      : L('fennick', 'Only spider silk is fine enough, and only Madame Weft in the Mistwood spins it. They say she bargains rather than bites, if you bring her what she wants. I hear she hates the dark.')],
+    ['legends', 'Know any old legends?', () => L('fennick', 'The Ballad of the Singing Cliffs! Smugglers carved a door in the rock that only opens to a three-note tune. The tune was lost, but the Oracle hears everything the sea remembers.', 'Second verse is about a mermaid queen who only rises for music. Third verse is about my lute, but I wrote that one.')],
+    ['wedding', 'What do you think of the wedding?', () => L('fennick', 'I was hired to play it. I\'d rather play a funeral for the groom. Don\'t tell anyone I said that. Actually, do.')]
+  ] };
+
+  TALKS.nell = { prompt: 'Ask the ferrywoman about...', topics: s => [
+    ['isles', 'Where can you take me?', () => flag(s, 'paid') ? L('nell', 'Mists and Clocks. That\'s my route. The far isles, Sentinel and the Coral Strand, need a proper map, and the only one worth a spit is Hester\'s.') : L('nell', 'Mists and Clocks, for one token. Bram at the curio shop hands them out for bottles with letters in, if you\'ve got one.')],
+    ['lighthouse', 'Why is the lighthouse dark?', s => flag(s, 'lit') ? L('nell', 'It\'s lit! Hester came down the stairs singing. Never heard her sing before. Never want to again, but still.') : L('nell', 'Steward\'s orders. Hester says the lamp only takes true fire now, from the Clockmakers\' forge. And the Clockmakers have been stuck since the Steward\'s men visited. Funny, that.')],
+    ['self', 'How long have you run the ferry?', () => L('nell', 'Thirty years. Seen four shipwrecks this month and one prince. You\'re the more surprising of the two.')]
+  ] };
+
+  TALKS.oracle = { prompt: 'Ask the Oracle about...', topics: s => [
+    ['pearl', 'Varrick\'s black pearl?', () => L('oracle', 'Stolen from the queen of the mer-folk. It drinks the sea\'s magic. While it is whole, Varrick\'s spells cannot be fought. But they can be turned. Find the queen on the Coral Strand.')],
+    ['king', 'Can the king be woken?', () => L('oracle', 'A sleep cast in the dark breaks at dawn. High on Sentinel Isle nests the roc, whose feathers hold the first light of morning. She gives them only to those who show her kindness.')],
+    ['princess', 'Is Elowen in danger?', () => L('oracle', 'She is bound, not broken. She cannot think clearly near the pearl. But she remembers your face. Show her something of yours she would know.')],
+    ['tunnel', 'How do I get into the castle?', () => L('oracle', 'The smugglers\' way, under the Singing Cliffs, opens to the whistle\'s song. It is dark beneath. Carry light that will not fail you.')]
+  ] };
+
+  TALKS.hester = { prompt: 'Ask Hester about...', topics: s => [
+    ['map', 'How does the map work?', () => L('hester', 'Touch an island, under open sky, and it carries you there. Doesn\'t work indoors. Ink sulks without the wind.')],
+    ['gull', flag(s, 'note_sent') ? 'Any word from the castle?' : 'Can you get a message into the castle?', s => {
+      if (flag(s, 'got_reply')) return L('hester', 'Pip brought back that ribbon and the princess\'s letter, didn\'t he? Read it again, lad. Girls in towers notice things.');
+      if (flag(s, 'note_sent')) return L('hester', 'Pip\'s still out. Gulls hate being watched. Go about your business, and come back after.');
+      if (!has(s, 'parchment')) return L('hester', 'Pip, my gull, used to carry notes to the princess\'s tower window when she was small. He\'d go again, but you\'ll need something to write on. Bram trades in odds and ends.');
+      lose(s, 'parchment'); set(s, 'note_sent'); pts(s, 'note', 3);
+      return { say: ['You write a short note in charcoal: "Elowen, I saw you in the mirror. I am here, on your island. Tell me how to help you. Rowan of Thornmere."', ['hester', 'Pip! Off you go.'], 'A grey gull hops onto the window sill, takes the rolled note in its beak, and wheels away toward the castle towers.', ['hester', 'Give him time. Go see to your other business and come back.']] };
+    }],
+    ['bram', 'Bram says you owe him a kettle.', () => L('hester', 'Bram owes me thirty years of apologies. He can wait for his kettle.')]
+  ] };
+
+  TALKS.nerissa = { prompt: 'Ask Queen Nerissa about...', topics: s => [
+    ['pearl', 'The stolen pearl?', () => L('nerissa', 'The heart of the sea\'s magic. Varrick took it from my coral throne while I slept. Every spell he casts draws on it. Turn his own magic back at it, and it will break.')],
+    ['wardens', 'The Tide Wardens?', () => L('nerissa', 'My little guards. Very loyal, very silly. I hope you did not hurt them. Lick has never once been beaten by a pickle, he tells me. He will be unbearable now.')],
+    ['varrick', 'Who is Varrick, really?', () => L('nerissa', 'A sea-witch\'s apprentice who ran away with his master\'s books. Proud, clever, and terrified of his own reflection. Sorcerers who steal always are.')]
+  ] };
+
+  TALKS.bertha = { prompt: 'Ask Bertha about...', topics: s => [
+    ['elowen', 'The princess?', () => L('bertha', 'I\'ve cooked for that girl since she was in nappies. She\'s not herself. Walks like a sleepwalker. Varrick\'s done something to her, mark my words.')],
+    ['varrick', 'The Steward?', () => L('bertha', 'Eats like a bird, sneers like a cat. Won\'t have a mirror in any room he uses. Had me take down the big one in the hall, the night before he took the chain.')],
+    ['hound', 'That hound in the hall?', s => flag(s, 'hound') ? L('bertha', 'You put Brutus to sleep? You beautiful boy! He\'s eaten three of my pies this week.') : L('bertha', 'Brutus. Varrick\'s beast. Can\'t be bribed, can\'t be fought. But I\'ve seen him nod off when the minstrels play soft.')]
+  ] };
+
+  // Bram appraises anything you bring him, and his opinions are clues.
+  const APPRAISE = {
+    conch: 'Pretty, but I\'ve got a hundred of those. Now, the Oracle out on the Isle of Mists listens to shells. Says the sea tells her things.',
+    ring: 'Keep that, lad. A crest like that might open doors someday. Or at least open a princess\'s eyes.',
+    fish: 'I deal in treasures, not lunch. Though I\'ve heard rocs go mad for silver fish.',
+    whistle: 'Mer-silver, that. Old smuggler work. The mer-folk on the Coral Strand used to rise for a tune played on one of those.',
+    glowcap: 'Glowcap. Lights up a dark wood, or a dark tunnel. Spiders love them, I\'m told. Don\'t ask me how I know.',
+    lantern: 'True fire from the Great Forge! Hester\'s been wanting that for six weeks.',
+    emptylantern: 'Good brass. Empty, though. The Clockmakers\' forge fills lanterns with fire that never dies, when it\'s running.',
+    prism: 'Hester\'s old lamp prism. Throw sunlight through that and you\'d blind a gull. Or anything with one big eye.',
+    rattler: 'Pim\'s rattler! Don\'t you dare wind it in my shop. That thing could deafen a whale.',
+    stinkhorn: 'Get that OUT. ...Well. If you ever need to knock out something with a big nose, that\'ll do it.',
+    pickle: 'One of Marla\'s fire pickles? Nobody who\'s tasted one has ever forgotten it. Some of them are still running.',
+    kelp: 'Cold, wet and clammy. Sea-folk feel like that. Land-folk don\'t.',
+    feather: 'A dawn feather from the roc! My grandmother said one could wake anyone from an enchanted sleep. Don\'t you sell that. Not even to me.',
+    mirror: 'Mer-queen\'s work. A true mirror. Magic can\'t pass through one, it bounces right back. Now who would be afraid of that, I wonder?',
+    letter: 'Put that away before somebody sees it, lad. Show it to Captain Orla, nobody else. She\'s the only honest sword in that castle.',
+    keys: 'Castle keys. I didn\'t see those. I didn\'t see you, either.',
+    songsheet: 'Fennick\'s lullaby! He played it in here once and I woke up two days later.',
+    tabard: 'A servant\'s tabard. Clever. Nobody ever looks at servants.',
+    coin: 'Smuggler\'s gold! Toss it in the fountain for luck. That\'s what the old smugglers did.',
+    thread: 'Spider silk! Fennick would give his left ear for that. Well, a song, anyway.',
+    bun: 'One of Marla\'s buns? Save it. Goats, children and princes can\'t resist them.',
+    oilcan: 'Pim\'s oil can. He\'ll want that back, so use it before he notices.',
+    compass: 'Hester\'s map! She gave you that? You must have done something remarkable.',
+    token: 'One of my own tokens! The ferrywoman takes those. Off you go, lad, the isles won\'t wait.',
+    parchment: 'Good parchment, that. Hester\'s gull could carry a letter written on it, if you knew who to write to.',
+    reply: 'A letter from the princess! Read it twice, lad. Girls in towers notice things.',
+    ribbon: 'Sea-green silk, royal weave. That\'s the princess\'s ribbon. Anyone in the castle who loves her would know it.'
+  };
+
   // ---- the Tide Wardens: one for each sense ----
   const WARDEN = (id, name, sense, rect, at, look, taunt, beat, wrong) => ({
     id, name, rect, at, gone: s => flag(s, 'w_' + id),
@@ -81,7 +194,7 @@
       if (i !== beat[0]) return say([id, wrong]);
       lose(s, i); set(s, 'w_' + id); pts(s, 'w_' + id, 4);
       const lines = [beat[1]];
-      if (!wardensLeft(s)) lines.push('The last of the Tide Wardens flees into the surf. The beach is clear, all the way to the lagoon.');
+      if (!wardensLeft(s)) lines.push('The last of the Tide Wardens flees into the surf. The beach is clear, all the way to the lagoon.', ['rowan', 'Sight, hearing, smell, taste and touch. I\'ve never been so glad to own a pickle.']);
       return say(...lines);
     }
   });
@@ -194,7 +307,7 @@
         {
           id: 'guards', name: 'castle guards', rect: [252, 110, 68, 58], at: [240, 176],
           look: () => say('Two guards in sea-green armor stand at the castle gate, looking as bored as only gate guards can.'),
-          talk: () => say(['guard', 'By order of the Grand Steward, nobody enters the castle until after the wedding. Move along.']),
+          talk: s => flag(s, 'lit') ? say(['guard', 'Nobody enters till after the wedding. And no, we don\'t know who lit the lighthouse. The Steward\'s been shouting about it all afternoon.'], ['guard', 'Sundown\'s not far off now. Move along.']) : say(['guard', 'By order of the Grand Steward, nobody enters the castle until after the wedding. Move along.']),
           hand: () => say('The guards have spears. You have hands. You decide against it.'),
           item: (s, i) => {
             if (i === 'ring') return say(['guard', 'A Thornmere signet? Lad, rings wash up on this beach every week. Move along.'], 'They don\'t even look at it properly.');
@@ -215,19 +328,15 @@
         {
           id: 'bram', name: 'Old Bram', rect: [234, 66, 34, 52], at: [170, 180],
           look: () => say('Old Bram has a beard like a sea-sponge and the squint of a man who has been appraising junk for sixty years.'),
-          talk: s => flag(s, 'traded')
-            ? say(['bram', 'Safe travels, lad. Mind the mists out there, and don\'t follow any lights! And if you ever see Hester at the lighthouse, tell her she still owes me a kettle.'])
-            : say(['bram', 'Welcome, welcome! Bram buys what the sea brings. Messages in bottles most of all. Nothing like a stranger\'s secrets, eh?'], ['bram', 'I\'ve a spare ferry token for anyone who brings me a good one.']),
+          talk: s => openTalk(s, 'bram', flag(s, 'met_bram') ? null : (set(s, 'met_bram'), L('bram', 'Welcome, welcome! Bram\'s Curios. Bram buys what the sea brings, and trades it for what you need.'))),
           hand: () => say('Bram is not for sale.'),
           item: (s, i) => {
             if (i === 'bottle') {
               lose(s, 'bottle'); gain(s, 'token'); set(s, 'traded'); pts(s, 'token', 6);
               return say('Bram\'s eyes light up. He works the cork out with his teeth and reads the note aloud.', ['bram', '"Dear Mum, the voyage is going fine, no need to worry. P.S. Please feed my goat." Beautiful!'], ['bram', 'Here, lad, a ferry token as promised. The ferrywoman at the docks will take you out to the near isles.']);
             }
-            if (i === 'conch') return say(['bram', 'Pretty, but I\'ve got a hundred of those. Now, the Oracle out on the Isle of Mists, she listens to shells. Says the sea tells her things.']);
-            if (i === 'ring') return say(['bram', 'Keep that, lad. A crest like that might open doors someday. Or at least one door.']);
-            if (i === 'fish') return say(['bram', 'I deal in treasures, not lunch.']);
-            return say(['bram', 'Not much call for that, I\'m afraid.']);
+            if (i === 'seaglass') { lose(s, 'seaglass'); gain(s, 'parchment'); set(s, 'traded_glass'); pts(s, 'glass', 2); return say(['bram', 'Coral Strand sea glass! Lovely. A fair trade, lad: parchment and a stick of charcoal.'], ['bram', 'Writing to someone? Hester at the lighthouse keeps a gull that used to carry notes up to the castle. Just saying.']); }
+            return say(['bram', APPRAISE[i] || 'Not much call for that, I\'m afraid.']);
           }
         },
         { id: 'book', name: 'guidebook', rect: [190, 106, 22, 12], at: [170, 180], look: () => say('A battered pamphlet on the counter: "A TRAVELLER\'S GUIDE TO THE TIDEWATER ISLES."', '"The Isle of Mists: home of the Oracle. Do not follow the lights. The Isle of Clocks: home of the Clockmakers, whose forge-fire never dies. Sentinel Isle: two stone guardians, one of whom always lies. The Coral Strand: where the mer-folk answer only to music."'), hand: () => say(['bram', 'That\'s the shop copy. Read, don\'t take.']) },
@@ -246,8 +355,7 @@
         {
           id: 'nell', name: 'ferrywoman', rect: [188, 100, 26, 50], at: [184, 162],
           look: () => say('A weathered ferrywoman in an oilskin coat, chewing on an unlit pipe.'),
-          talk: s => flag(s, 'paid') ? say(['nell', 'Hop in whenever you\'re ready. Mists or Clocks, I\'ll run you back and forth. Nothing else to do on a wedding day.'], ['nell', 'The far isles? Not in my boat. Hester at the lighthouse has a map that goes anywhere, they say.'])
-            : say(['nell', 'Ferry to the near isles. One token. No token, no boat. No exceptions, not even for handsome shipwrecked fellows.']),
+          talk: s => openTalk(s, 'nell', flag(s, 'met_nell') ? null : (set(s, 'met_nell'), L('nell', 'Ferry to the near isles. One token. No token, no boat. No exceptions, not even for handsome shipwrecked fellows.'))),
           item: (s, i) => {
             if (i === 'token') { lose(s, 'token'); set(s, 'paid'); pts(s, 'paid', 4); return say('She bites the token, nods, and pockets it.', ['nell', 'That buys you as many trips as you like today. Climb aboard when you\'re ready.']); }
             if (i === 'ring') return say(['nell', 'Pretty. Not a token.']);
@@ -263,14 +371,14 @@
       name: 'The Lighthouse', isle: 'crown',
       walk: [50, 150, 300, 194],
       block: [[136, 152, 44, 40]],
-      enter: s => once(s, 'seen_lh', ['You climb a hundred and twelve steps. You count them, twice, out of spite. At the top is the great lamp, cold and dark, and a woman with a telescope.']),
+      enter: s => (flag(s, 'note_sent') && flag(s, 'note_away') && !flag(s, 'got_reply')) ? (set(s, 'got_reply'), gain(s, 'reply'), gain(s, 'ribbon'), pts(s, 'reply', 4), ['As you reach the top of the stairs, a grey gull swoops in through the window and drops a folded letter and a sea-green ribbon at your feet.', ['hester', 'Pip\'s back! And he\'s brought you an answer, by the look of it.'], 'The letter is from Elowen. Read it in your bag.']) : once(s, 'seen_lh', ['You climb a hundred and twelve steps. You count them, twice, out of spite. At the top is the great lamp, cold and dark, and a woman with a telescope.']),
       spots: [
         { id: 'down', name: 'stairs down', rect: [8, 40, 40, 150], at: [56, 176], exit: { to: 'docks', x: 100, y: 186 } },
         {
           id: 'hester', name: 'Hester', rect: [202, 120, 28, 52], at: [196, 182],
           look: () => say('Hester the lighthouse keeper: brass buttons, a wind-burned face, and a scowl aimed at the dark lamp.'),
           talk: s => flag(s, 'lit')
-            ? say(['hester', 'Keep that chart dry, lad. The needle always points home, wherever home turns out to be.'])
+            ? openTalk(s, 'hester')
             : say(['hester', 'Six weeks ago the Steward ordered my light put out. Said it "confused the fish." Since then, three ships have hit the rocks.'], ['hester', 'Yours makes four, by the look of you.'], ['hester', 'And the flame won\'t catch from any common fire now. It needs true fire, from the Clockmakers\' forge. Bring me that and I\'ll give you anything I own.']),
           hand: () => say('Hester gives you a look that could relight the lamp on its own.'),
           item: (s, i) => i === 'lantern' ? lightLamp(s) : i === 'emptylantern' ? say(['hester', 'An empty lantern won\'t light anything, lad. It needs true fire in it.']) : i === 'ring' ? say(['hester', 'Thornmere! So you\'re the prince from the wreck. Shame about your ship. Shame about my light.']) : say(['hester', 'What would I want with that?'])
@@ -320,7 +428,7 @@
           id: 'sibyl', name: 'Oracle', rect: [140, 70, 40, 48], at: [160, 164],
           look: () => say('An old woman sits cross-legged beside a glowing pool, her eyes milky white. She is looking right at you anyway.'),
           talk: s => {
-            if (flag(s, 'got_whistle')) return say(['oracle', 'The cliffs will sing for you now, Prince. Gather what you need: true fire for the dark, dawn for the sleeper, a mirror for the sorcerer. The sun does not wait.']);
+            if (flag(s, 'pts_oracle')) return openTalk(s, 'oracle', flag(s, 'got_whistle') ? L('oracle', 'Gather what you need: true fire for the dark, dawn for the sleeper, a mirror for the sorcerer. The sun does not wait.') : L('oracle', 'Bring me the voice of the sea, Prince.'));
             pts(s, 'oracle', 3);
             return say(
               ['oracle', 'Rowan of Thornmere. The sea told me you would come.'],
@@ -417,8 +525,8 @@
           item: (s, i) => {
             if (i !== 'oilcan') return null;
             if (flag(s, 'clock')) return say('It\'s running beautifully already.');
-            set(s, 'clock'); lose(s, 'oilcan'); pts(s, 'clock', 10);
-            return say('You oil every tooth of the great gear. Sand grinds, metal groans, and then, with a CLUNK you feel in your boots, the gear begins to turn.', 'Far above, the great clock strikes noon. Twelve booming notes roll across the island, and outside, the whole town starts moving again.');
+            set(s, 'clock'); lose(s, 'oilcan'); pts(s, 'clock', 8);
+            return say('You oil every tooth of the great gear. Sand grinds, metal groans, and then, with a CLUNK you feel in your boots, the gear begins to turn.', 'Far above, the great clock strikes noon. Twelve booming notes roll across the island, and outside, the whole town starts moving again.', ['rowan', 'One island unfrozen. If only weddings could be stopped with an oil can.']);
           }
         },
         { id: 'gears', name: 'gears', rect: [200, 5, 95, 70], look: () => say('Gears driving gears driving gears. Somewhere in here, presumably, is the reason for all of it.') },
@@ -509,7 +617,7 @@
         {
           id: 'nerissa', name: 'Queen Nerissa', rect: [150, 58, 50, 40], at: [170, 152], gone: s => !flag(s, 'summoned'),
           look: () => say('Nerissa, queen of the mer-folk. Her eyes are the deep green of the sea far from land.'),
-          talk: s => flag(s, 'got_mirror') ? say(['nerissa', 'Go. What is cast at you, send home.'])
+          talk: s => flag(s, 'got_mirror') ? openTalk(s, 'nerissa', L('nerissa', 'What is cast at you, send home.'))
             : say(['nerissa', 'The Steward stole my black pearl, the heart of the sea\'s magic. With it he put the king to sleep and bent the princess to his will.'], ['nerissa', 'I will help you break him. But how do I know you are not one of his creatures?']),
           hand: () => say('You do not touch the queen of the sea uninvited.'),
           item: (s, i) => {
@@ -538,7 +646,7 @@
           id: 'marla', name: 'Marla', rect: [236, 70, 30, 50], at: [178, 186],
           look: () => say('Marla the innkeeper: arms like a dockhand, apron like a battlefield.'),
           talk: s => {
-            if (flag(s, 'got_bun')) return say(['marla', 'You\'ll want to watch yourself around the castle, love. Varrick keeps a hound in the servants\' halls. Big as a pony and twice as mean.']);
+            if (flag(s, 'got_bun')) return openTalk(s, 'marla');
             set(s, 'got_bun'); gain(s, 'bun'); pts(s, 'bun', 2);
             return say(['marla', 'A shipwreck survivor! You look half drowned. Here, a sweet bun, on the house.'], ['marla', 'Rejoice at the wedding? I\'d sooner rejoice at a funeral. The old king was good to this town, and now Varrick says he\'s too ill for visitors. Ill, my foot.']);
           },
@@ -548,13 +656,11 @@
         {
           id: 'fennick', name: 'Fennick the bard', rect: [52, 124, 26, 46], at: [80, 178],
           look: s => say(flag(s, 'strung') ? 'Fennick, happily tuning his newly strung lute.' : 'Fennick the bard, gloomy in a feathered cap. His lute is missing its highest string.'),
-          talk: s => flag(s, 'strung')
-            ? say(['fennick', 'Mind that lullaby. Sing it to anything with teeth and it\'ll be snoring before the second verse.'])
-            : say(['fennick', 'Snapped my silver string on a high note. The only thread fine enough to replace it is spider silk from the Mistwood, and I\'m not going near those spiders.'], ['fennick', 'Bring me some and I\'ll teach you a song worth knowing.']),
+          talk: s => openTalk(s, 'fennick', flag(s, 'met_fennick') ? null : (set(s, 'met_fennick'), L('fennick', 'Snapped my silver string on a high note. The only thread fine enough to replace it is spider silk from the Mistwood.', 'Bring me some and I\'ll teach you a song worth knowing.'))),
           hand: () => say(['fennick', 'Careful! The lute is the only thing I own that\'s in tune.']),
           item: (s, i) => {
             if (i === 'thread') {
-              lose(s, 'thread'); gain(s, 'songsheet'); set(s, 'strung'); pts(s, 'song', 6);
+              lose(s, 'thread'); gain(s, 'songsheet'); set(s, 'strung'); pts(s, 'song', 5);
               return say('Fennick strings his lute with the spider silk. It shines like moonlight.', ['fennick', 'Perfect pitch! Listen to this.'], 'He plays the gentlest lullaby you have ever heard. Marla yawns. You yawn. A cat by the fire falls asleep mid-stretch.', ['fennick', 'The Lullaby of the Isles. My grandmother sang it to sea-serpents. Here, I\'ve written it out for you.']);
             }
             if (i === 'coin') return say(['fennick', 'A tip! Wonderful. But I\'d rather have a string.']);
@@ -655,7 +761,7 @@
           talk: () => say(['rowan', 'Excuse me. Could I just squeeze past?'], 'The goat chews. The goat stares. The goat does not move.'),
           hand: () => ({ die: 'You try to shove the goat out of the way.\n\nThe goat tries to shove you out of the way.\n\nThe goat is better at it.' }),
           item: (s, i) => {
-            if (i === 'bun') { lose(s, 'bun'); set(s, 'goat'); pts(s, 'goat', 5); return say('You hold out Marla\'s sweet bun. The goat sniffs it, snatches it, and trots happily up onto a rock above the ledge to eat it in peace.', 'The way is clear.'); }
+            if (i === 'bun') { lose(s, 'bun'); set(s, 'goat'); pts(s, 'goat', 5); return say('You hold out Marla\'s sweet bun. The goat sniffs it, snatches it, and trots happily up onto a rock above the ledge to eat it in peace.', 'The way is clear.', ['rowan', 'Bested by a bun. Father must never hear of this.']); }
             if (i === 'fish') return say('The goat looks deeply offended.');
             return say('The goat isn\'t interested. The goat has standards, and they involve pastry.');
           }
@@ -677,6 +783,11 @@
           look: () => say('A tiny purple octopus, stranded on the sand by the tide. It\'s drying out fast and looks very sorry for itself.'),
           talk: () => say(['rowan', 'Hang on, little fellow.'], 'It waves one tentacle feebly.'),
           hand: s => { set(s, 'octo'); pts(s, 'octo', 3); return say('You scoop up the little octopus and carry it to the nearest pool. It turns a happy shade of pink, squirts you in the face, and vanishes under a rock.', 'Ungrateful, but alive.'); }
+        },
+        {
+          id: 'seaglass', name: 'sea glass', rect: [100, 182, 16, 10], at: [108, 190], gone: s => flag(s, 'got_glass'),
+          look: () => say('Something glints green in the sand: a piece of sea glass, smooth as a sweet.'),
+          hand: s => { set(s, 'got_glass'); gain(s, 'seaglass'); return say('You pick up a lovely piece of green sea glass. Bram would probably like this.'); }
         },
         { id: 'pools', name: 'tide pools', rect: [14, 132, 166, 54], look: () => say('Pools full of anemones, starfish and darting fish, all glowing faintly.') },
         { id: 'arch', name: 'rock arch', rect: [160, 14, 160, 100], look: () => say('A great arch of coral rock. Waves boom through it every few seconds.') }
@@ -701,7 +812,7 @@
           item: (s, i) => {
             if (i === 'songsheet') {
               if (flag(s, 'hound')) return say('It\'s already asleep.');
-              set(s, 'hound'); pts(s, 'hound', 6);
+              set(s, 'hound'); pts(s, 'hound', 5);
               return say('You unfold Fennick\'s song sheet and, very quietly, sing the Lullaby of the Isles.', 'The hound\'s ears droop. Its eyes droop. Its whole enormous body droops. By the second verse it is flat on its side, snoring like a landslide.');
             }
             if (i === 'fish' || i === 'bun') return say('The hound isn\'t hungry. It\'s guarding. Big difference.');
@@ -721,12 +832,13 @@
           id: 'bertha', name: 'Bertha the cook', rect: [205, 120, 30, 52], at: [196, 180],
           look: () => say('Bertha the cook: flour to the elbows and a wooden spoon held like a sword.'),
           talk: s => flag(s, 'got_tabard')
-            ? say(['bertha', 'Go on, then! Stand up straight. Servants slouch, but not that much.'])
+            ? openTalk(s, 'bertha', L('bertha', 'Go on, then! Stand up straight. Servants slouch, but not that much.'))
             : say(['bertha', 'Out! Out of my kitchen! I\'ve a wedding cake to finish for a wedding I want no part of.'], ['bertha', 'Wait. You\'re not one of Varrick\'s lot. Who are you, then?']),
           hand: () => say(['bertha', 'Touch me and you\'ll be wearing this spoon.']),
           item: (s, i) => {
-            if (i === 'ring') {
-              if (flag(s, 'got_tabard')) return say(['bertha', 'Yes, yes, a stag. Go!']);
+            if (i === 'ring' || i === 'ribbon') {
+              if (flag(s, 'got_tabard')) return say(['bertha', 'Yes, yes. Go!']);
+              if (i === 'ribbon') { set(s, 'got_tabard'); gain(s, 'tabard'); pts(s, 'tabard', 6); return say(['bertha', 'That\'s my girl\'s ribbon! She sent you? Then you\'re the prince from the mirror.'], ['bertha', 'You\'ll never get past the guards at the Great Hall like that. Here, a servant\'s tabard. Head down, shoulders round, look miserable. You\'ll fit right in.']); }
               set(s, 'got_tabard'); gain(s, 'tabard'); pts(s, 'tabard', 6);
               return say(['bertha', 'The stag of Thornmere! The princess talked of nothing else for a week. The prince in the mirror!'], ['bertha', 'If you mean to stop this wedding, you\'ll never get past the guards at the Great Hall dressed like a drowned rat. Here, a servant\'s tabard. Put it on and keep your head down.']);
             }
@@ -752,8 +864,8 @@
           look: s => say(flag(s, 'letter_found') ? 'The desk, its drawer hanging open where you found the letter.' : 'A heavy desk with one drawer. The papers on top are all decrees for Varrick to sign.'),
           hand: s => {
             if (flag(s, 'letter_found')) return say('The drawer is empty now.');
-            set(s, 'letter_found'); gain(s, 'letter'); pts(s, 'letter', 8);
-            return say('You slide open the drawer. Under a stack of blank decrees is a folded letter in Varrick\'s own hand. You read it, and your jaw tightens.', 'The king isn\'t dead. And here is the proof.');
+            set(s, 'letter_found'); gain(s, 'letter'); pts(s, 'letter', 6);
+            return say('You slide open the drawer. Under a stack of blank decrees is a folded letter in Varrick\'s own hand. You read it, and your jaw tightens.', 'The king isn\'t dead. And here is the proof.', ['rowan', 'Elowen was right. Now to get this to someone who can use it.']);
           }
         },
         { id: 'raven', name: 'raven', rect: [56, 48, 28, 30], look: () => say('A glossy black raven with a silver ring on one leg. It watches you with one eye, then the other.'), talk: () => say('"STEWARD," croaks the raven. "STEWARD. STEWARD. SNACK?"'), hand: () => say('The raven pecks your knuckles. Fair enough.') },
@@ -847,6 +959,7 @@
           talk: s => flag(s, 'trust') ? say(['elowen', 'Captain Orla commands the guard. If you have proof, give it to her.']) : say('You whisper her name. She turns slightly, but who would trust a soggy stranger at her own wedding?'),
           hand: () => say('Grabbing the bride in front of fifty guards is not the romantic gesture it sounds like.'),
           item: (s, i) => {
+            if (i === 'ribbon' && !flag(s, 'trust')) { set(s, 'trust'); pts(s, 'trust', 8); return say('You hold up her own sea-green ribbon. Elowen\'s eyes widen, and for a moment the dull fog in them clears.', ['elowen', 'Pip found you. You came. You\'re real.'], ['elowen', 'He\'s done something to me. I can\'t think straight. Captain Orla commands the guard. If you have proof, give it to her.']); }
             if (i === 'ring') { set(s, 'trust'); pts(s, 'trust', 8); return say('You hold up your signet ring. Elowen catches her breath and lifts her veil. For a moment, the dull look in her eyes clears.', ['elowen', 'The leaping stag... I saw you. In the mirror, a month ago. You\'re real.'], ['elowen', 'He\'s done something to me. I can\'t think straight. Captain Orla commands the guard. If you have proof, give it to her.']); }
             if (i === 'letter') return say(['elowen', 'Give it to Orla. The guard obeys her, not me. Not today.']);
             return say('Elowen gives you a puzzled look.');
@@ -859,7 +972,7 @@
           item: (s, i) => {
             if (i === 'letter') {
               if (!flag(s, 'trust')) return say(['orla', 'A forged scrap from a stranger who sneaked into the castle? Nice try.'], 'She doesn\'t even read it. You need someone she trusts to vouch for you.');
-              lose(s, 'letter'); set(s, 'unmasked'); pts(s, 'unmask', 6);
+              lose(s, 'letter'); set(s, 'unmasked'); pts(s, 'unmask', 5);
               return {
                 say: [
                   'Orla reads the letter. Her face goes from grey to red to a very dangerous white.',
@@ -937,7 +1050,7 @@
 
   function lightLamp(s) {
     if (flag(s, 'lit')) return say('The lamp is already blazing.');
-    set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); gain(s, 'prism'); pts(s, 'lit', 8); pts(s, 'compass', 4);
+    set(s, 'lit'); set(s, 'compass'); gain(s, 'compass'); gain(s, 'prism'); pts(s, 'lit', 6); pts(s, 'compass', 4);
     return say('You hand Hester the forge lantern. She opens the great lamp, touches the ember to the wick, and with a WHUMP the lighthouse blazes back to life, throwing its beam across the sea.', ['hester', 'True fire. Ha! Let the Steward complain about the fish now.'], 'She hands the lantern back. A spark was all the great lamp needed.', ['hester', 'I promised anything I own. Take my magic map. My grandmother had it off a sea-witch. Touch an island on it, under open sky, and it\'ll carry you there.'], ['hester', 'And take this old prism. It cracked years ago, so I swapped it out, but it still throws a flash that could blind a gull.'], 'You can now use the magic map from any outdoor screen. Look for the map button on your icon bar.');
   }
 
@@ -1048,6 +1161,12 @@
     if (h('emptylantern')) return H('What is the empty lantern for?', 'True fire comes from the Great Forge, through Pim\'s back door.', 'Go through Pim\'s back door to the Great Forge and use the empty lantern on the forge.');
     if (!f('got_fish')) return H('Is there anything else on the Isle of Clocks?', 'The town is moving again. Someone has fish to give away.', 'Talk to the fishmonger in the harbor. He\'ll give you a fish.');
     if (!f('lit')) return H('What is the forge lantern for?', 'Who has been asking for true fire?', 'Take the docks path south to the lighthouse and give the lantern to Hester. She\'ll give you the magic map.');
+    if (f('compass') && !f('got_reply') && f('pts_aerie') && f('got_mirror') && !f('door_open')) {
+      if (!f('got_glass') && !f('traded_glass')) return H('Is there a way to reach Elowen before the wedding?', 'Bram trades parchment for something pretty from the tide pools past the Coral Strand.', 'Pick up the sea glass at the tide pools, trade it to Bram for parchment, then ask Hester about getting a message into the castle.');
+      if (has(s, 'seaglass')) return H('What is the sea glass for?', 'Bram loves pretty things from the sea.', 'Give the sea glass to Bram. He\'ll trade you parchment.');
+      if (has(s, 'parchment')) return H('What do I write on the parchment?', 'Hester keeps a gull that knows the way to the princess\'s tower.', 'Talk to Hester at the lighthouse and ask about getting a message into the castle.');
+      if (f('note_sent')) return H('Where is Elowen\'s answer?', 'Gulls hate being watched.', 'Visit another island, then come back up to the lighthouse.');
+    }
     if (!f('pts_aerie')) {
       if (!f('pts_sentq') && s.room !== 'ledge') return H('How do I get past the sentinels?', 'Ask a question whose answer is a lie either way.', 'Ask either sentinel what the OTHER one would say. Then climb the opposite stair.');
       if (!f('goat')) return H('How do I get past the goat?', 'The goat has standards, and they involve pastry.', 'Give Marla\'s sweet bun to the goat.');
@@ -1161,7 +1280,18 @@
     return r || {};
   }
 
-  const choose = (s, id, opt) => CHOICES[id] ? CHOICES[id](s, opt) : {};
+  function choose(s, id, opt) {
+    if (id.startsWith('talk_')) {
+      const who = id.slice(5);
+      if (opt === 'bye') return {};
+      const topic = TALKS[who].topics(s).filter(Boolean).find(x => x[0] === opt);
+      if (!topic) return {};
+      let r = topic[2](s); if (Array.isArray(r)) r = { say: r };
+      if (!r.go && !r.die && !r.win) r.choose = openTalk(s, who).choose;
+      return r;
+    }
+    return CHOICES[id] ? CHOICES[id](s, opt) : {};
+  }
 
   // The magic map works from any outdoor screen.
   function canSail(s) { return flag(s, 'compass') && !!ROOMS[s.room].outdoors; }
@@ -1174,6 +1304,7 @@
 
   function enter(s, go) {
     s.room = go.to; [s.x, s.y] = nearestFree(go.to, go.x, go.y);
+    if (flag(s, 'note_sent') && ROOMS[go.to].isle !== 'crown') set(s, 'note_away');
     set(s, 'visited_' + ROOMS[go.to].isle);
     const e = ROOMS[go.to].enter;
     return e ? e(s) : null;

@@ -26,7 +26,7 @@
   // ---------- people ----------
   // Feet at (x,y). o: {skin, hair, top, legs, dress, h, cape, hat, robe, armor, veil, beard}
   function figure(c, x, y, o, frame = 0, dir = 1) {
-    const h = o.h || 30, s = h / 30;
+    const h = o.h || 34, s = h / 30;
     const X = v => x + v * s * dir, Y = v => y - v * s;
     const r = (col, x0, y0, w, hh) => { const a = X(x0), b = X(x0 + w); R(c, col, Math.min(a, b), Y(y0 + hh), Math.abs(b - a), hh * s); };
     ell(c, 'rgba(0,0,0,.28)', x, y, 6 * s, 1.6 * s);
@@ -58,7 +58,7 @@
   }
 
   const HERO = { skin: '#e8b48a', hair: '#6b3f1d', top: '#2f6b3a', sleeve: '#efe6d0', legs: '#4a3a2a', belt: '#e2b23a', cape: '#8c1d26' };
-  const player = (c, x, y, frame, dir) => figure(c, x, y, HERO, frame, dir);
+  const player = (c, x, y, frame, dir, sc = 1) => figure(c, x, y, Object.assign({}, HERO, { h: 36 * sc }), frame, dir);
 
   // ---------- shared scenery ----------
   function sky(c, cols, h) { bands(c, 0, 0, 320, h, cols); }
@@ -261,6 +261,8 @@
       sky(c, ['#4a5ea6', '#6a6fb0', '#9a7fb0', '#d08f8f', '#f0b080', '#f6d29a'], 64);
       sun(c, 240, 50, 10, '#ffe0a0'); clouds(c, t, 16, 'rgba(255,220,200,.6)', 51);
       island(c, 180, 64, 70, '#8a6aa8'); c.fillStyle = 'rgba(210,180,240,.4)'; c.fillRect(170, 46, 90, 20);
+      R(c, '#e8e0d0', 96, 40, 6, 24); R(c, '#8c1d26', 96, 46, 6, 3); R(c, '#8c1d26', 96, 54, 6, 3); R(c, '#3a3a4a', 95, 36, 8, 4); poly(c, '#5a6a8a', [80, 64, 90, 60, 108, 60, 116, 64]);
+      if (s.flags.lit) { circ(c, 'rgba(255,240,160,.35)', 99, 38, 8); poly(c, 'rgba(255,240,170,' + (0.18 + Math.sin(t * 2) * 0.1) + ')', [99, 38, 99 + Math.cos(t) * 90, 30, 99 + Math.cos(t) * 90, 46]); circ(c, '#fff6c0', 99, 38, 2.5); }
       sea(c, t, 64, 136, ['#3a5f9e', '#3f68a6', '#4572ad', '#4b7cb4', '#5186bb', '#5186bb']);
       c.fillStyle = 'rgba(255,220,150,.35)'; for (let i = 0; i < 8; i++) c.fillRect(226 + Math.sin(t * 2 + i) * 6, 70 + i * 6, 28 - i * 2, 1);
       // pier
@@ -394,10 +396,365 @@
       torch(c, 100, 50, t); torch(c, 220, 50, t);
     },
     actors: s => [
-      { y: 152, d: c => figure(c, 139, 152, { skin: '#d8c0a8', hair: '#111', top: '#1a1a22', legs: '#111', cape: '#3a1020', h: 33, beard: '#111' }, 0, 1) },
+      { y: 152, d: c => { figure(c, 139, 152, VARRICK, 0, 1); circ(c, '#120818', 139, 126, 1.8); circ(c, 'rgba(120,60,160,.5)', 139, 126, 3); } },
       { y: 152, d: c => figure(c, 179, 152, { skin: '#f0c8a8', hair: '#c8862e', longHair: true, top: '#3fae8f', dress: '#3fae8f', trim: '#e2b23a', legs: '#3fae8f', veil: !s.flags.trust, hat: r => { r('#e2b23a', -2.5, 28.5, 5, 1.2); } }, 0, -1) },
       { y: 162, d: c => figure(c, 259, 162, { skin: '#d8a888', hair: '#9a9a9a', top: '#2f6b5a', armor: '#b8c4c6', legs: '#4a4a52', cape: '#2f8a7a' }, 0, -1) }
     ]
+  };
+
+  // ---------- people used in several places ----------
+  const VARRICK = { skin: '#d8c0a8', hair: '#111', top: '#1a1a22', legs: '#111', cape: '#3a1020', h: 38, beard: '#111' };
+  const ELOWEN = { skin: '#f0c8a8', hair: '#c8862e', longHair: true, top: '#3fae8f', dress: '#3fae8f', trim: '#e2b23a', legs: '#3fae8f', hat: r => { r('#e2b23a', -2.5, 28.5, 5, 1.2); } };
+  const gear = (c, x, y, r, teeth, ang, col, hub) => {
+    c.save(); c.translate(x, y); c.rotate(ang); c.fillStyle = col;
+    for (let i = 0; i < teeth; i++) { c.save(); c.rotate(i * Math.PI * 2 / teeth); c.fillRect(-r * 0.12, -r - r * 0.18, r * 0.24, r * 0.3); c.restore(); }
+    c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+    c.fillStyle = hub || 'rgba(0,0,0,.35)'; c.beginPath(); c.arc(0, 0, r * 0.55, 0, 7); c.fill();
+    c.fillStyle = col; for (let i = 0; i < 4; i++) { c.save(); c.rotate(i * Math.PI / 2); c.fillRect(-r * 0.08, -r * 0.6, r * 0.16, r * 0.6); c.restore(); }
+    circ(c, '#2a1d12', 0, 0, r * 0.14); c.restore();
+  };
+
+  rooms.lighthouse = {
+    bg(c, s, t) {
+      const lit = s.flags.lit;
+      stoneWall(c, 0, 0, 320, 150, '#8a8478', '#6e685d', 13);
+      // windows to the sea
+      [[18, 30], [240, 30]].forEach(([x, y]) => { R(c, '#3a3530', x - 3, y - 3, 76, 56); bands(c, x, y, 70, 50, lit ? ['#2a3a6a', '#3a4a7a', '#5a5a8a', '#8a6a8a'] : ['#4a6aa8', '#6a8ac0', '#9ab0d0', '#d8c8b0']); R(c, '#3a3530', x + 34, y, 2, 50); R(c, '#3a3530', x, y + 24, 70, 2); });
+      island(c, 30, 66, 30, '#6a5a8a'); island(c, 262, 66, 26, '#7a6aa0');
+      // telescope
+      c.strokeStyle = '#3a2a1a'; c.lineWidth = 2; c.beginPath(); c.moveTo(270, 150); c.lineTo(280, 110); c.lineTo(290, 150); c.stroke(); R(c, '#c99a22', 266, 100, 34, 6); R(c, '#e2b23a', 266, 100, 6, 6);
+      // great lamp
+      if (lit) { circ(c, 'rgba(255,230,140,.18)', 160, 80, 90); circ(c, 'rgba(255,240,170,.3)', 160, 80, 50); }
+      R(c, '#5a4a2a', 124, 120, 72, 30); R(c, '#c99a22', 120, 118, 80, 5);
+      poly(c, '#c99a22', [130, 40, 190, 40, 196, 118, 124, 118]);
+      for (let i = 0; i < 6; i++) R(c, lit ? '#fff6c0' : '#a8c4d0', 132 + i * 2, 44 + i * 12, 56 - i * 4 + i * 4, 9);
+      for (let i = 0; i < 6; i++) R(c, lit ? 'rgba(255,200,80,.5)' : 'rgba(255,255,255,.25)', 132, 52 + i * 12, 56, 2);
+      R(c, '#c99a22', 128, 36, 64, 6); poly(c, '#8a6a2a', [134, 36, 160, 20, 186, 36]);
+      if (lit) { c.fillStyle = 'rgba(255,250,210,.9)'; c.beginPath(); c.ellipse(160, 80, 10 + Math.sin(t * 6), 18, 0, 0, 7); c.fill(); }
+      else { R(c, '#3a3530', 158, 74, 4, 14); }
+      // floor grating and stairwell
+      bands(c, 0, 150, 320, 50, ['#3a3530', '#45403a', '#4f4943']);
+      c.fillStyle = 'rgba(0,0,0,.35)'; for (let x = 0; x < 320; x += 8) c.fillRect(x, 150, 1, 50); for (let y = 154; y < 200; y += 8) c.fillRect(0, y, 320, 1);
+      R(c, '#110f0d', 0, 130, 18, 70);
+    },
+    actors: () => [{ y: 162, d: c => figure(c, 220, 162, { skin: '#d8a080', hair: '#b8b8b8', longHair: true, top: '#2a3a6a', dress: '#2a3a6a', trim: '#c99a22', legs: '#2a3a6a', hat: r => { r('#1a2440', -3.5, 28, 7, 2); r('#1a2440', -2.5, 29.5, 5, 2); } }, 0, -1) }]
+  };
+
+  rooms.clockharbor = {
+    bg(c, s, t) {
+      const run = s.flags.clock, a = run ? t : 0;
+      sky(c, ['#5a6aa8', '#7a7ab0', '#a08aa8', '#d0a090', '#e8c098'], 140);
+      clouds(c, run ? t : 0, 20, 'rgba(255,230,210,.6)', 61);
+      // buildings
+      const bld = (x, w, h, col, rf) => { R(c, col, x, 140 - h, w, h); R(c, rf, x - 3, 140 - h - 6, w + 6, 6); R(c, 'rgba(0,0,0,.2)', x + w - 4, 140 - h, 4, h); };
+      bld(8, 80, 50, '#b0784a', '#6a3a22'); bld(170, 70, 70, '#a8885a', '#5a4a3a'); bld(240, 80, 56, '#9a6a4a', '#5a3a2a');
+      [[190, 70], [262, 84], [30, 90]].forEach(([x, y], i) => { R(c, '#5a4a3a', x, y - 20, 8, 20); for (let k = 0; k < 3; k++) circ(c, 'rgba(200,200,200,.35)', x + 4 + (run ? Math.sin(t + k) * 3 : 0), y - 26 - k * 7 - (run ? (t * 6 % 7) : 0), 3 + k); });
+      gear(c, 214, 96, 14, 10, a * 0.8, '#c99a22'); gear(c, 236, 112, 9, 8, -a * 1.2, '#b88a2a'); gear(c, 290, 110, 12, 9, a, '#c99a22');
+      // workshop door (round)
+      circ(c, '#4a2c18', 47, 120, 18); R(c, '#4a2c18', 29, 120, 36, 22); circ(c, '#6b4428', 47, 120, 15); R(c, '#6b4428', 32, 120, 30, 22); circ(c, '#e2b23a', 58, 128, 1.5);
+      // clock tower
+      R(c, '#c8b08a', 118, 4, 44, 138); R(c, '#a8906a', 154, 4, 8, 138); poly(c, '#5a7a8a', [114, 4, 140, -14, 166, 4]);
+      circ(c, '#e8e0cc', 140, 36, 19); circ(c, '#c99a22', 140, 36, 19); circ(c, '#f6eedc', 140, 36, 16);
+      for (let i = 0; i < 12; i++) { const an = i * Math.PI / 6; R(c, '#3a2a1a', 140 + Math.cos(an) * 13 - 0.5, 36 + Math.sin(an) * 13 - 0.5, 1.5, 1.5); }
+      const mn = run ? t * 0.3 : -0.1, hr = run ? t * 0.025 : -0.02;
+      c.strokeStyle = '#1a1a1a'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(140, 36); c.lineTo(140 + Math.sin(mn) * 13, 36 - Math.cos(mn) * 13); c.stroke();
+      c.lineWidth = 2; c.beginPath(); c.moveTo(140, 36); c.lineTo(140 + Math.sin(hr) * 8, 36 - Math.cos(hr) * 8); c.stroke();
+      R(c, '#3a2a1a', 126, 96, 28, 46); R(c, '#5a3a22', 128, 98, 24, 44); R(c, run ? '#2a1a10' : '#1a120a', 140, 98, 12, 44);
+      // ground and harbour
+      dith(c, 0, 140, 320, 60, '#9a8a70', '#8a7a62');
+      c.fillStyle = 'rgba(0,0,0,.12)'; for (let y = 146; y < 200; y += 8) for (let x = (y / 8 % 2) * 6; x < 240; x += 12) c.fillRect(x, y, 10, 1);
+      sea(c, run ? t : 0, 150, 50, ['#3a6a9a', '#4276a4', '#4a82ae']); R(c, '#9a8a70', 0, 150, 242, 50);
+      R(c, '#5a4a3a', 238, 150, 6, 50);
+      const bob = run ? Math.sin(t * 1.6) * 1.5 : 0;
+      poly(c, '#6a3a22', [250, 170 + bob, 316, 170 + bob, 308, 188 + bob, 256, 188 + bob]); R(c, '#e8e0cc', 252, 170 + bob, 62, 2); R(c, '#5a3a22', 282, 110 + bob, 3, 60); poly(c, '#efe4c8', [285, 114 + bob, 310, 160 + bob, 285, 160 + bob]);
+      // fish stall
+      R(c, '#7a5a3a', 178, 132, 54, 16); poly(c, '#3fae8f', [176, 104, 234, 104, 238, 114, 172, 114]); for (let i = 0; i < 6; i++) R(c, i % 2 ? '#e8e3d6' : '#3fae8f', 172 + i * 11, 114, 11, 4);
+      for (let i = 0; i < 5; i++) ell(c, '#b8c8d0', 186 + i * 9, 130, 4, 1.6);
+      // frozen flour / falling flour
+      for (let i = 0; i < 14; i++) { const fy = run ? (110 + ((t * 20 + i * 7) % 40)) : 112 + (i * 5 % 22); R(c, '#f6f0e0', 84 + (i * 7 % 22), fy, 1, 1); }
+    },
+    actors: s => [
+      { y: 156, d: c => figure(c, 92, 156, { skin: '#e8b48a', hair: '#5a3a22', top: '#e8e0cc', dress: '#c86a3a', legs: '#c86a3a', hat: r => { r('#f6f0e0', -3, 28, 6, 3); } }, s.flags.clock ? Math.floor(Date.now() / 300) % 2 : 0, 1) },
+      { y: 156, d: c => figure(c, 204, 156, { skin: '#d8a080', hair: '#2a1d12', top: '#4a6a8a', legs: '#3a3a44', beard: '#2a1d12' }, 0, -1) }
+    ]
+  };
+
+  rooms.workshop = {
+    bg(c, s, t) {
+      bands(c, 0, 0, 320, 160, ['#3a2818', '#46301e', '#523824', '#5c402a']);
+      // wall of clocks, all ticking (Pim keeps his own)
+      const g = rnd(31);
+      for (let i = 0; i < 11; i++) {
+        const x = 70 + g() * 230, y = 18 + g() * 60, r = 6 + g() * 8;
+        circ(c, '#c99a22', x, y, r + 1.5); circ(c, '#f6eedc', x, y, r);
+        const an = t * (0.5 + g()) + i;
+        c.strokeStyle = '#1a1a1a'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(an) * r * 0.8, y - Math.cos(an) * r * 0.8); c.stroke();
+      }
+      gear(c, 290, 120, 16, 10, t, '#8a6a2a'); gear(c, 268, 140, 10, 8, -t * 1.6, '#a8822a');
+      // bench
+      R(c, '#6b4428', 56, 120, 108, 8); R(c, '#4a2c18', 60, 128, 6, 32); R(c, '#4a2c18', 152, 128, 6, 32);
+      R(c, '#c99a22', 66, 108, 16, 12); circ(c, '#3fae8f', 74, 106, 4); R(c, '#e8e0cc', 92, 104, 20, 16); R(c, '#8c1d26', 120, 112, 24, 8);
+      poly(c, '#7a9ac8', [96, 104, 100, 96, 104, 104]); R(c, '#c99a22', 130, 100, 2, 12);
+      // forge glow
+      R(c, '#3a2a1a', 230, 96, 40, 56); R(c, '#1a120a', 236, 110, 28, 26);
+      const f = 0.6 + Math.sin(t * 5) * 0.2; circ(c, `rgba(255,140,40,${0.3 * f})`, 250, 124, 26); poly(c, '#ff9a1f', [240, 136, 260, 136, 250 + Math.sin(t * 9) * 2, 114]); poly(c, '#ffe066', [245, 136, 255, 136, 250, 122]);
+      // door
+      R(c, '#2e1c10', 8, 80, 40, 84); R(c, '#e8c898', 12, 84, 32, 80);
+      bands(c, 0, 160, 320, 40, ['#4a3020', '#52382a', '#5a4030']);
+      c.fillStyle = 'rgba(0,0,0,.2)'; for (let y = 166; y < 200; y += 7) c.fillRect(0, y, 320, 1);
+    },
+    actors: () => [{ y: 168, d: c => figure(c, 200, 168, { h: 22, skin: '#e8b48a', hair: '#e8e8e8', beard: '#f0f0f0', top: '#8c1d26', legs: '#3a3a6a', hat: r => { r('#3a3a3a', -3, 25.5, 6, 1.6); r('#9fe0ff', -2.5, 25.6, 2, 1.4); r('#9fe0ff', 0.5, 25.6, 2, 1.4); } }, 0, -1) }]
+  };
+
+  rooms.clocktower = {
+    bg(c, s, t) {
+      const run = s.flags.clock, a = run ? t * 0.4 : 0;
+      bands(c, 0, 0, 320, 160, ['#1e1810', '#2a2216', '#352a1c', '#3e3220']);
+      [60, 260].forEach(x => R(c, '#4a3420', x, 0, 8, 160)); R(c, '#4a3420', 0, 20, 320, 6);
+      // light from the clock face above
+      poly(c, 'rgba(255,220,150,.07)', [130, 0, 190, 0, 230, 160, 90, 160]);
+      gear(c, 160, 90, 48, 22, a, run ? '#c99a22' : '#9a7a3a');
+      if (!run) for (let i = 0; i < 30; i++) R(c, '#c8b080', 120 + (i * 13 % 80), 60 + (i * 7 % 60), 2, 1);
+      gear(c, 252, 48, 22, 12, -a * 2.2, '#b88a2a'); gear(c, 286, 80, 14, 9, a * 3.4, '#c99a22'); gear(c, 240, 86, 10, 8, a * 4, '#a8822a');
+      // pendulum
+      const sw = run ? Math.sin(t * 2.4) * 0.25 : 0;
+      c.save(); c.translate(50, 30); c.rotate(sw); R(c, '#8a6a2a', -1, 0, 3, 100); circ(c, '#c99a22', 0, 106, 10); circ(c, '#e2b23a', -3, 103, 3); c.restore();
+      bands(c, 0, 160, 320, 40, ['#2a2216', '#30281a', '#36301e']);
+      c.fillStyle = 'rgba(0,0,0,.3)'; for (let x = 0; x < 320; x += 16) c.fillRect(x, 160, 1, 40);
+    }
+  };
+
+  rooms.sentbase = {
+    bg(c, s, t) {
+      sky(c, ['#3a5aa0', '#4a6aac', '#6a86bc', '#94a8cc', '#c4c8d4'], 120);
+      clouds(c, t, 14, 'rgba(255,255,255,.7)', 71);
+      sea(c, t, 100, 60, ['#2a5f9a', '#2f6aa6', '#3576b0', '#3c83ba']);
+      // the spire
+      poly(c, '#6a6458', [80, 160, 110, 40, 140, 6, 160, 0, 182, 8, 212, 44, 240, 160]);
+      dith(c, 120, 10, 80, 150, '#76705f', '#6a6458');
+      c.fillStyle = '#4e4a40'; [[130, 30, 1, 40], [190, 50, 1, 60], [150, 90, 1, 30]].forEach(a => c.fillRect(...a));
+      // stairs
+      const stair = (x0, dir) => { for (let i = 0; i < 9; i++) { const y = 150 - i * 12, x = x0 + (i % 2 ? 10 : 0) * dir; R(c, '#9a9282', x, y, 22, 4); R(c, '#4e4a40', x, y + 4, 22, 2); } };
+      stair(108, 1); stair(188, -1);
+      // ground
+      dith(c, 0, 152, 320, 48, '#7a7466', '#6e6858');
+      for (let i = 0; i < 8; i++) poly(c, '#5e5a4e', [i * 44, 200, i * 44 + 10, 186, i * 44 + 22, 200]);
+      // sentinels
+      const statue = (x, col, hi, sly) => {
+        R(c, '#5e5a4e', x - 4, 140, 58, 16); R(c, hi, x - 4, 140, 58, 2);
+        R(c, col, x + 10, 84, 30, 56); R(c, col, x + 14, 66, 22, 20); R(c, hi, x + 14, 66, 22, 2);
+        R(c, '#111', x + 18, 74, 4, 2); R(c, '#111', x + 28, 74, 4, 2);
+        if (sly) { R(c, '#111', x + 20, 80, 10, 1); R(c, '#111', x + 29, 79, 2, 1); } else R(c, '#111', x + 20, 80, 10, 1);
+        R(c, col, x + 2, 90, 8, 40); R(c, col, x + 40, 90, 8, 40); R(c, hi, x + 22, 60, 6, 6);
+        R(c, '#8a8478', x + 44, 60, 3, 80);
+      };
+      statue(40, '#9a968c', '#bab6ac', false); statue(230, '#3a3a40', '#5a5a64', true);
+      R(c, '#c8b878', 146, 130, 28, 16); R(c, '#8a7a48', 148, 133, 24, 1); R(c, '#8a7a48', 148, 137, 20, 1); R(c, '#8a7a48', 148, 141, 22, 1);
+      poly(c, '#6a3a22', [0, 182, 38, 182, 34, 196, 0, 196]); R(c, '#e8e0cc', 0, 182, 38, 2);
+    }
+  };
+
+  rooms.aerie = {
+    bg(c, s, t) {
+      sky(c, ['#2a4a90', '#3a5aa0', '#5a7ab4', '#8aa4c8', '#bccce0'], 150);
+      for (let i = 0; i < 4; i++) ell(c, 'rgba(255,255,255,.85)', ((i * 110 + t * 4) % 420) - 50, 130 + i * 5, 60, 8);
+      if (!s.flags.fed) { const rx = 160 + Math.cos(t * 0.5) * 110, ry = 34 + Math.sin(t) * 8, w = Math.sin(t * 3) * 6; poly(c, '#c8922a', [rx - 26, ry + w, rx, ry - 3, rx + 26, ry + w, rx, ry + 4]); R(c, '#a87420', rx - 2, ry - 3, 4, 9); }
+      // summit
+      poly(c, '#6a6050', [0, 200, 0, 152, 40, 140, 120, 146, 200, 138, 280, 144, 320, 150, 320, 200]);
+      dith(c, 0, 152, 320, 48, '#766a58', '#6a604e');
+      R(c, '#110f0d', 0, 140, 18, 60);
+      // nest
+      ell(c, '#5a3a1a', 215, 148, 66, 16);
+      for (let i = 0; i < 26; i++) { c.strokeStyle = i % 2 ? '#7a5228' : '#4a2e14'; c.lineWidth = 2; c.beginPath(); const y = 134 + (i % 6) * 4; c.moveTo(152 + (i * 13 % 40), y); c.lineTo(240 + (i * 17 % 40), y + (i % 3) - 1); c.stroke(); }
+      if (!s.flags.feather_taken_never) { [[256, 136], [266, 132], [272, 138]].forEach(([x, y], i) => { if (i === 0 && s.inv.includes('feather')) return; c.save(); c.translate(x, y); c.rotate(-0.4 + i * 0.3); ell(c, '#ffd84a', 0, 0, 7, 2); R(c, '#fff6c0', -7, 0, 14, 0.6); c.restore(); }); }
+      circ(c, 'rgba(255,220,100,.12)', 266, 136, 14);
+    },
+    actors: s => [
+      { y: 140, d: c => {
+        const fed = s.flags.fed, bob = fed ? Math.sin(Date.now() / 900) : Math.sin(Date.now() / 120) * 2;
+        circ(c, '#e8d8b0', 213, 112 + bob, 15); circ(c, '#f6ecd0', 209, 108 + bob, 8);
+        circ(c, '#111', 208, 106 + bob, 1.6); circ(c, '#111', 218, 106 + bob, 1.6);
+        if (fed) { R(c, '#111', 206, 106 + bob, 4, 1); R(c, '#111', 216, 106 + bob, 4, 1); poly(c, '#e2a23a', [210, 112 + bob, 216, 112 + bob, 213, 115 + bob]); }
+        else poly(c, '#e2a23a', [208, 111 + bob, 218, 111 + bob, 213, 120 + bob]);
+      } },
+      { y: 120, d: c => {
+        if (!s.flags.fed) return;
+        ell(c, '#c8922a', 90, 90, 46, 26); ell(c, '#e2b23a', 84, 84, 30, 14);
+        poly(c, '#a87420', [50, 90, 20, 60, 70, 76]); poly(c, '#a87420', [130, 86, 150, 116, 110, 104]);
+        circ(c, '#d8a23a', 134, 58, 14); poly(c, '#e8c060', [146, 56, 164, 62, 146, 66]); circ(c, '#111', 138, 54, 2); circ(c, '#fff', 138.6, 53.4, 0.6);
+        R(c, '#8a6a20', 80, 114, 3, 14); R(c, '#8a6a20', 96, 114, 3, 14);
+      } }
+    ]
+  };
+
+  rooms.reef = {
+    bg(c, s, t) {
+      sky(c, ['#3a8ac8', '#4a9ad0', '#6ab0d8', '#98c8e0', '#d0e4e8'], 64);
+      sun(c, 270, 26, 9, '#fff6c8'); clouds(c, t, 16, 'rgba(255,255,255,.8)', 81);
+      sea(c, t, 64, 86, ['#1aa0b8', '#22acc0', '#2ab8c4', '#40c4c8', '#5cd0cc']);
+      c.fillStyle = 'rgba(255,255,255,.22)'; for (let i = 0; i < 4; i++) ell(c, 'rgba(255,190,200,.25)', 60 + i * 60, 108 + (i % 2) * 10, 16, 4);
+      // big rock
+      poly(c, '#7a6a64', [146, 132, 156, 104, 180, 96, 200, 104, 208, 132]); poly(c, '#968680', [158, 106, 180, 98, 196, 106, 180, 112]);
+      // sand
+      dith(c, 0, 140, 320, 60, '#f0c8b8', '#e8b8a8');
+      c.fillStyle = 'rgba(255,255,255,.75)'; for (let x = 0; x < 320; x += 7) c.fillRect(x, 139 + Math.sin(x / 8 + t * 1.5) * 1.5, 5, 2);
+      ell(c, '#40a0b0', 70, 178, 30, 8); ell(c, '#60c0c8', 68, 177, 24, 5); circ(c, '#ff8a6a', 60, 178, 2); circ(c, '#ffd84a', 78, 176, 1.5);
+      palm(c, 22, 168, 80, t);
+      [[110, 186], [140, 176], [200, 190]].forEach(([x, y]) => { poly(c, '#ff9aa8', [x, y, x + 3, y - 6, x + 6, y]); });
+      const bob = Math.sin(t * 1.6) * 1;
+      poly(c, '#6a3a22', [256, 172 + bob, 320, 172 + bob, 320, 192 + bob, 264, 192 + bob]); R(c, '#e8e0cc', 258, 172 + bob, 62, 2); R(c, '#5a3a22', 290, 116 + bob, 3, 56); poly(c, '#efe4c8', [293, 120 + bob, 316, 164 + bob, 293, 164 + bob]);
+    },
+    actors: s => s.flags.summoned ? [{ y: 130, d: c => {
+      const sw = Math.sin(Date.now() / 600) * 2;
+      poly(c, '#7ad0c8', [176, 122, 186, 122, 196 + sw, 132, 204 + sw, 126, 200 + sw, 136, 180, 132]);
+      R(c, '#7ad0c8', 172, 112, 14, 12);
+      R(c, '#d8b8a0', 172, 100, 12, 12); R(c, '#e8c8b0', 174, 88, 9, 10);
+      R(c, '#2a6a8a', 170, 86, 13, 4); R(c, '#2a6a8a', 168, 88, 4, 22); R(c, '#2a6a8a', 182, 88, 3, 16);
+      poly(c, '#ff8a9a', [172, 86, 174, 80, 177, 85, 179, 79, 182, 86]);
+      R(c, '#111', 179, 92, 1, 1);
+    } }] : []
+  };
+
+  rooms.tower = {
+    bg(c, s, t) {
+      const dawn = s.won === 'long', beaten = s.flags.beaten;
+      stoneWall(c, 0, 0, 320, 160, '#4a4450', '#36323c', 101);
+      [[90, 24], [190, 24]].forEach(([x, y]) => {
+        R(c, '#26222c', x - 3, y - 3, 46, 66);
+        if (dawn) { bands(c, x, y, 40, 60, ['#f0c070', '#f6d890', '#fff0c0']); }
+        else { bands(c, x, y, 40, 60, ['#1a1a2a', '#22223a', '#2a2a40']); if (Math.sin(t * 1.7) > 0.96) R(c, '#e8e8ff', x, y, 40, 60); }
+        R(c, '#26222c', x + 19, y, 2, 60);
+      });
+      if (dawn) poly(c, 'rgba(255,220,140,.18)', [90, 84, 230, 84, 300, 160, 40, 160]);
+      bands(c, 0, 160, 320, 40, ['#2e2a34', '#34303a', '#3a3640']);
+      c.fillStyle = 'rgba(0,0,0,.25)'; for (let y = 166; y < 200; y += 8) c.fillRect(0, y, 320, 1);
+      R(c, '#110f14', 0, 130, 18, 70);
+      // bier with the king
+      R(c, '#6a6474', 40, 140, 90, 18); R(c, '#8a8494', 38, 136, 94, 6);
+      R(c, '#e8e0cc', 52, 128, 70, 9); R(c, '#3a4a8a', 64, 126, 52, 10); circ(c, '#f0d0b8', 56, 129, 5); R(c, '#e8e8e8', 54, 132, 7, 5); poly(c, '#e2b23a', [51, 124, 61, 124, 60, 120, 58, 123, 56, 119, 54, 123, 52, 120]);
+      if (!dawn) { c.strokeStyle = 'rgba(140,80,200,.6)'; c.lineWidth = 1; for (let i = 0; i < 4; i++) { c.beginPath(); c.moveTo(50, 132); for (let x = 50; x < 124; x += 8) c.lineTo(x, 124 + Math.sin(x / 6 + t * 3 + i) * 5 + i * 2); c.stroke(); } }
+      // lectern + spellbook
+      R(c, '#4a2c18', 150, 128, 10, 32); poly(c, '#5a3a22', [138, 120, 172, 116, 172, 128, 138, 130]); R(c, '#e8e0cc', 141, 114, 14, 10); R(c, '#d8d0bc', 155, 113, 14, 10); R(c, '#8c1d26', 154, 113, 2, 11);
+      torch(c, 30, 70, t); torch(c, 290, 70, t);
+    },
+    actors: (s, t) => {
+      const list = [];
+      if (!s.flags.beaten) list.push({ y: 160, d: c => {
+        figure(c, 212, 160, VARRICK, 0, -1);
+        const p = 0.6 + Math.sin(t * 6) * 0.3; circ(c, `rgba(140,60,200,${0.35 * p})`, 212, 133, 9); circ(c, '#200a30', 212, 134, 2);
+        c.strokeStyle = `rgba(190,120,255,${p})`; c.lineWidth = 1; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(206, 126); let x = 206, y = 126; for (let k = 0; k < 5; k++) { x += -4 + Math.sin(t * 20 + k + i) * 4; y -= 4; c.lineTo(x, y); } c.stroke(); }
+      } });
+      else list.push({ y: 180, d: c => { ell(c, '#c8402e', 208, 178, 6, 3.5); R(c, '#a83020', 201, 176, 2, 2); R(c, '#a83020', 213, 176, 2, 2); circ(c, '#c8402e', 200, 174, 2); circ(c, '#c8402e', 216, 174, 2); R(c, '#111', 206, 175, 1, 1); R(c, '#111', 210, 175, 1, 1); } });
+      list.push({ y: 160, d: c => {
+        figure(c, 261, 160, ELOWEN, 0, -1);
+        if (!s.flags.beaten) { c.strokeStyle = `rgba(120,60,180,${0.6 + Math.sin(t * 8) * 0.2})`; c.lineWidth = 1; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(250 + i * 4, 160); c.lineTo(250 + i * 4 + Math.sin(t * 9 + i), 124); c.stroke(); } R(c, 'rgba(60,20,90,.25)', 248, 124, 26, 36); }
+      } });
+      return list;
+    }
+  };
+
+  // ---------- talker portraits (drawn into 56x56) ----------
+  const P = {
+    rowan: { bg: '#2f6b3a', skin: '#e8b48a', hair: '#6b3f1d', shirt: '#2f6b3a', collar: '#efe6d0' },
+    bram: { bg: '#5a3a22', skin: '#e3b08c', hair: '#d8d8d8', beard: '#e4e4e4', shirt: '#3d5a8a', hat: '#8c1d26', squint: true },
+    nell: { bg: '#4a6a8a', skin: '#c9906a', hair: '#a8a8a8', long: true, shirt: '#c8a43a', hat: '#c8a43a', pipe: true },
+    oracle: { bg: '#241c3c', skin: '#c8a090', hair: '#e8e8f0', long: true, shirt: '#4a2e6a', blind: true },
+    pim: { bg: '#5c402a', skin: '#e8b48a', hair: '#e8e8e8', beard: '#f0f0f0', shirt: '#8c1d26', goggles: true },
+    hester: { bg: '#2a3a6a', skin: '#d8a080', hair: '#b8b8b8', long: true, shirt: '#2a3a6a', hat: '#1a2440' },
+    fishmonger: { bg: '#a8885a', skin: '#d8a080', hair: '#2a1d12', beard: '#2a1d12', shirt: '#4a6a8a' },
+    guard: { bg: '#2f8a7a', skin: '#dba882', hair: '#2a1d12', shirt: '#9aa7a8', helm: '#9aa7a8' },
+    granite: { bg: '#5a5650', skin: '#9a968c', hair: '#9a968c', shirt: '#7a766c', stone: true },
+    basalt: { bg: '#2a2a30', skin: '#3a3a40', hair: '#3a3a40', shirt: '#2a2a30', stone: true, sly: true },
+    nerissa: { bg: '#1aa0b8', skin: '#e8c8b0', hair: '#2a6a8a', long: true, shirt: '#7ad0c8', coral: true },
+    elowen: { bg: '#3fae8f', skin: '#f0c8a8', hair: '#c8862e', long: true, shirt: '#3fae8f', circlet: true },
+    orla: { bg: '#2f6b5a', skin: '#d8a888', hair: '#9a9a9a', shirt: '#b8c4c6', scar: true },
+    varrick: { bg: '#1a1020', skin: '#d8c0a8', hair: '#111', beard: '#111', shirt: '#1a1a22', pearl: true, sly: true },
+    king: { bg: '#3a4a8a', skin: '#f0d0b8', hair: '#e8e8e8', beard: '#e8e8e8', shirt: '#3a4a8a', crown: true }
+  };
+  function portrait(c, who) {
+    const o = P[who]; if (!o) return false;
+    bands(c, 0, 0, 56, 56, [o.bg, shade(o.bg, -12), shade(o.bg, -24)]);
+    R(c, o.shirt, 8, 44, 40, 12); if (o.collar) poly(c, o.collar, [22, 44, 28, 52, 34, 44]);
+    if (o.long) { R(c, o.hair, 13, 14, 30, 34); }
+    R(c, o.skin, 24, 36, 8, 8);
+    ell(c, o.skin, 28, 26, 12, 14);
+    if (o.stone) { c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(20, 18, 1, 16); c.fillRect(34, 24, 1, 12); }
+    // hair cap
+    c.fillStyle = o.hair; c.beginPath(); c.ellipse(28, 17, 13, 8, 0, Math.PI, 0); c.fill(); R(c, o.hair, 15, 16, 4, 8); R(c, o.hair, 37, 16, 4, 8);
+    if (o.beard) { c.fillStyle = o.beard; c.beginPath(); c.moveTo(17, 28); c.quadraticCurveTo(28, 52, 39, 28); c.lineTo(36, 30); c.quadraticCurveTo(28, 38, 20, 30); c.fill(); }
+    // eyes
+    if (o.blind) { R(c, '#e8e8f0', 21, 25, 5, 3); R(c, '#e8e8f0', 30, 25, 5, 3); }
+    else if (o.squint) { R(c, '#111', 21, 26, 5, 1); R(c, '#111', 30, 26, 5, 1); }
+    else { R(c, '#fff', 21, 24, 5, 3); R(c, '#fff', 30, 24, 5, 3); R(c, o.stone ? '#111' : '#2a3a5a', 23, 24, 2, 3); R(c, o.stone ? '#111' : '#2a3a5a', 32, 24, 2, 3); }
+    R(c, shade(o.hair, -20), 20, 21, 6, 1.5); R(c, shade(o.hair, -20), 30, 21, 6, 1.5);
+    if (o.sly) { R(c, '#111', 30, 20, 6, 1.5); }
+    R(c, shade(o.skin, -25), 27, 27, 2, 5);
+    if (!o.beard || o.pearl) { R(c, '#8a3a3a', 24, 34, 8, 1.5); if (o.sly) R(c, '#8a3a3a', 31, 33, 2, 1.5); }
+    if (o.hat) { R(c, o.hat, 14, 9, 28, 6); R(c, o.hat, 18, 4, 20, 6); }
+    if (o.helm) { R(c, o.helm, 14, 7, 28, 10); R(c, shade(o.helm, -20), 26, 15, 4, 8); }
+    if (o.crown) poly(c, '#e2b23a', [16, 12, 40, 12, 40, 3, 35, 8, 31, 1, 28, 8, 25, 1, 21, 8, 16, 3]);
+    if (o.circlet) { R(c, '#e2b23a', 16, 14, 24, 2); circ(c, '#3fae8f', 28, 15, 1.6); }
+    if (o.coral) poly(c, '#ff8a9a', [16, 12, 19, 2, 23, 10, 28, 0, 33, 10, 37, 2, 40, 12]);
+    if (o.goggles) { R(c, '#3a3a3a', 16, 15, 24, 3); circ(c, '#9fe0ff', 22, 16, 3.5); circ(c, '#9fe0ff', 34, 16, 3.5); }
+    if (o.pipe) { R(c, '#4a2c18', 32, 34, 9, 2); R(c, '#4a2c18', 40, 31, 3, 4); }
+    if (o.scar) R(c, '#a86a5a', 33, 22, 1, 9);
+    if (o.pearl) { circ(c, '#200a30', 28, 47, 3); circ(c, 'rgba(160,80,220,.6)', 28, 47, 5); }
+    return true;
+  }
+  function shade(hex, amt) {
+    const n = parseInt(hex.slice(1, 7), 16); const cl = v => Math.max(0, Math.min(255, v));
+    return '#' + [16, 8, 0].map(sh => cl(((n >> sh) & 255) + amt).toString(16).padStart(2, '0')).join('');
+  }
+
+  // ---------- the sea chart ----------
+  const MAP_SPOTS = { crown: [104, 104, 34], mists: [222, 60, 26], clocks: [240, 146, 26], sentinels: [56, 44, 22], reef: [60, 160, 24] };
+  function chart(c, s, t, here) {
+    dith(c, 0, 0, 320, 200, '#e8d8b0', '#e0cea2');
+    c.strokeStyle = '#8a6a3a'; c.lineWidth = 3; c.strokeRect(5, 5, 310, 190); c.lineWidth = 1; c.strokeRect(10, 10, 300, 180);
+    c.fillStyle = 'rgba(80,120,160,.25)'; for (let i = 0; i < 40; i++) { const x = 20 + (i * 71 % 280), y = 20 + (i * 37 % 160); c.fillRect(x + Math.sin(t + i) * 2, y, 8, 1); }
+    const isle = (k, draw) => { const [x, y] = MAP_SPOTS[k]; draw(x, y); };
+    isle('crown', (x, y) => { ell(c, '#b8a070', x, y, 30, 18); ell(c, '#8aa060', x, y - 2, 24, 13); R(c, '#e8e0d0', x - 4, y - 14, 8, 10); poly(c, '#2f8a7a', [x - 6, y - 14, x, y - 22, x + 6, y - 14]); });
+    isle('mists', (x, y) => { ell(c, '#8a7aa0', x, y, 22, 12); for (let i = 0; i < 3; i++) ell(c, 'rgba(200,180,230,.6)', x - 10 + i * 10, y - 6 + Math.sin(t + i) * 2, 12, 4); });
+    isle('clocks', (x, y) => { ell(c, '#b09060', x, y, 22, 12); R(c, '#c8b08a', x - 3, y - 18, 6, 14); circ(c, '#f6eedc', x, y - 14, 3); gear(c, x + 10, y - 4, 4, 6, t, '#c99a22'); });
+    isle('sentinels', (x, y) => { ell(c, '#8a8478', x, y + 6, 16, 7); poly(c, '#6a6458', [x - 8, y + 6, x, y - 18, x + 8, y + 6]); });
+    isle('reef', (x, y) => { ell(c, '#f0c8b8', x, y, 20, 10); ell(c, '#40c4c8', x + 4, y, 8, 4); R(c, '#7a5a32', x - 10, y - 12, 2, 10); ell(c, '#2f7a30', x - 9, y - 13, 6, 2); });
+    c.font = '9px Georgia, serif'; c.textAlign = 'center';
+    for (const k in MAP_SPOTS) { const [x, y, r] = MAP_SPOTS[k]; c.fillStyle = k === here ? '#8c1d26' : '#3a2a1a'; c.fillText(window.Game.ISLES[k].name, x, y + r - 2); if (k === here) { c.strokeStyle = '#8c1d26'; c.setLineDash([3, 2]); c.beginPath(); c.arc(x, y, r - 4, 0, 7); c.stroke(); c.setLineDash([]); } }
+    // compass rose
+    const cx = 270, cy = 46; c.strokeStyle = '#8a6a3a'; c.beginPath(); c.arc(cx, cy, 18, 0, 7); c.stroke();
+    poly(c, '#8c1d26', [cx, cy - 20, cx + 4, cy, cx - 4, cy]); poly(c, '#3a2a1a', [cx, cy + 20, cx + 4, cy, cx - 4, cy]); poly(c, '#3a2a1a', [cx - 20, cy, cx, cy - 3, cx, cy + 3]); poly(c, '#3a2a1a', [cx + 20, cy, cx, cy - 3, cx, cy + 3]);
+    c.fillStyle = '#3a2a1a'; c.fillText('N', cx, cy - 22);
+    c.font = 'italic 11px Georgia, serif'; c.fillText('The Tidewater Isles', 160, 24); c.textAlign = 'left';
+  }
+
+  // ---------- cinematics ----------
+  const cine = {
+    mirror(c, s, t) {
+      bands(c, 0, 0, 320, 200, ['#1a1028', '#22142e', '#2a1a36', '#321e3e']);
+      torch(c, 60, 70, t); torch(c, 260, 70, t);
+      R(c, '#c99a22', 112, 24, 96, 132); R(c, '#8a6a2a', 116, 28, 88, 124);
+      const g = 0.5 + Math.sin(t * 2) * 0.15;
+      bands(c, 120, 32, 80, 116, ['#3a5a7a', '#4a6a8a', '#5a7a9a']);
+      circ(c, `rgba(200,240,255,${0.2 * g})`, 160, 90, 50);
+      // her face in the glass
+      R(c, '#c8862e', 140, 58, 40, 60); ell(c, '#f0c8a8', 160, 82, 15, 19); c.fillStyle = '#c8862e'; c.beginPath(); c.ellipse(160, 68, 17, 10, 0, Math.PI, 0); c.fill();
+      R(c, '#e2b23a', 144, 66, 32, 2); R(c, '#2a3a5a', 152, 80, 4, 3); R(c, '#2a3a5a', 164, 80, 4, 3); R(c, '#b8604a', 156, 92, 8, 2); R(c, '#3fae8f', 140, 100, 40, 18);
+      c.fillStyle = `rgba(255,255,255,${0.12 + Math.sin(t * 3) * 0.05})`; c.fillRect(124, 36 + ((t * 30) % 110), 72, 3);
+      for (let i = 0; i < 6; i++) circ(c, '#e2b23a', 114 + (i % 2) * 92, 34 + Math.floor(i / 2) * 56, 3);
+      R(c, '#2a1a10', 0, 170, 320, 30); figure(c, 160, 196, Object.assign({}, HERO, { h: 34 }), 0, 1);
+    },
+    storm(c, s, t) {
+      const flash = Math.sin(t * 2.3) > 0.97;
+      bands(c, 0, 0, 320, 110, flash ? ['#a8a8c8', '#9898b8', '#8888a8'] : ['#141824', '#1a2030', '#20283a', '#263044']);
+      for (let i = 0; i < 6; i++) ell(c, '#2a3040', ((i * 70 + t * 20) % 400) - 40, 20 + (i % 3) * 14, 50, 10);
+      if (flash) { c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.moveTo(220, 0); c.lineTo(210, 30); c.lineTo(224, 40); c.lineTo(206, 80); c.stroke(); }
+      for (let y = 110; y < 200; y += 6) { const off = Math.sin(y / 10 + t * 3) * 10; bands(c, 0, y, 320, 6, [y % 12 ? '#1a3050' : '#203860']); c.fillStyle = 'rgba(255,255,255,.3)'; for (let x = 0; x < 320; x += 40) c.fillRect(x + off + (y * 3 % 40), y, 10, 1); }
+      const roll = Math.sin(t * 1.6) * 0.2, by = 118 + Math.sin(t * 2) * 6;
+      c.save(); c.translate(150, by); c.rotate(roll);
+      poly(c, '#4b3220', [-50, 0, 50, 0, 38, 18, -40, 18]); R(c, '#6a4a2e', -2, -70, 4, 70); poly(c, '#d8d0bc', [2, -66, 34, -40, 2, -14]); poly(c, '#c8c0aa', [-2, -60, -30, -36, -2, -16]);
+      R(c, '#8c1d26', 0, -78, 12, 5); c.restore();
+      c.fillStyle = 'rgba(200,220,255,.35)'; for (let i = 0; i < 60; i++) c.fillRect((i * 53 + t * 300) % 320, (i * 37 + t * 500) % 200, 1, 6);
+    }
   };
 
   // ---------- inventory icons (drawn into 24x24) ----------
@@ -408,8 +765,14 @@
     token: c => { circ(c, '#c99a22', 12, 12, 9); circ(c, '#e2b23a', 12, 12, 7); poly(c, '#7a5a1a', [8, 15, 16, 15, 15, 17, 9, 17]); poly(c, '#7a5a1a', [12, 6, 12, 14, 16, 14]); },
     glowcap: c => { circ(c, 'rgba(140,255,160,.35)', 12, 10, 11); R(c, '#d8f0d0', 10, 10, 4, 11); ell(c, '#7dffa0', 12, 9, 9, 5); ell(c, '#c8ffd8', 9, 7, 3, 1.5); },
     whistle: c => { c.save(); c.translate(12, 12); c.rotate(-0.6); R(c, '#cfd6d8', -10, -2, 20, 5); R(c, '#ffffff', -10, -2, 20, 1); R(c, '#555', -4, -1, 2, 2); R(c, '#555', 0, -1, 2, 2); R(c, '#555', 4, -1, 2, 2); c.restore(); },
+    oilcan: c => { R(c, '#c99a22', 5, 10, 12, 11); R(c, '#e2b23a', 5, 10, 3, 11); poly(c, '#c99a22', [17, 13, 23, 4, 23, 6, 18, 16]); R(c, '#8a6a2a', 9, 6, 4, 4); },
+    lantern: c => { R(c, '#8a6a2a', 9, 1, 6, 3); R(c, '#c99a22', 6, 4, 12, 3); R(c, '#c99a22', 6, 19, 12, 3); R(c, '#c99a22', 6, 7, 2, 12); R(c, '#c99a22', 16, 7, 2, 12); circ(c, 'rgba(255,160,40,.5)', 12, 13, 6); poly(c, '#ff9a1f', [9, 18, 15, 18, 12, 9]); poly(c, '#ffe066', [10.5, 18, 13.5, 18, 12, 13]); },
+    fish: c => { ell(c, '#b8c8d0', 11, 12, 8, 4); poly(c, '#98a8b0', [18, 12, 23, 7, 23, 17]); circ(c, '#111', 6, 11, 1); R(c, '#e8f0f4', 6, 13, 9, 1); },
+    compass: c => { R(c, '#e8d8b0', 2, 4, 20, 16); R(c, '#c8b080', 2, 4, 3, 16); R(c, '#c8b080', 19, 4, 3, 16); ell(c, '#8aa060', 10, 11, 4, 3); ell(c, '#8a7aa0', 15, 8, 2, 1.5); circ(c, '#c99a22', 16, 15, 3.5); poly(c, '#8c1d26', [16, 12, 17, 15, 15, 15]); },
+    feather: c => { c.save(); c.translate(12, 12); c.rotate(-0.8); circ(c, 'rgba(255,220,100,.4)', 0, 0, 10); ell(c, '#ffd84a', 0, 0, 10, 3.5); R(c, '#fff6c0', -11, -0.5, 22, 1); c.restore(); },
+    mirror: c => { ell(c, '#e79aa0', 12, 13, 10, 9); ell(c, '#dfeff6', 12, 13, 7, 6); R(c, '#ffffff', 8, 9, 3, 2); for (let i = 0; i < 5; i++) R(c, '#b9666e', 4 + i * 4, 21, 2, 2); },
     letter: c => { R(c, '#f4ead2', 3, 5, 18, 14); poly(c, '#d8ccb0', [3, 5, 12, 13, 21, 5]); circ(c, '#8c1d26', 12, 13, 3); }
   };
 
-  root.Art = { rooms, player, items, figure };
+  root.Art = { rooms, player, items, figure, portrait, chart, MAP_SPOTS, cine };
 })(this);

@@ -6,8 +6,10 @@ Prince Rowan of Thornmere washes up on the Tidewater Isles, chasing a princess h
 
 **Play:** https://samahlersmeyer-prog.github.io/crown-of-tides/
 
-- Walk, Look, Hand, Talk and Item verbs, an inventory bag, 100 points to earn
-- 10 hand-painted scenes across two islands, plenty of ways to die, and a "Try again" button
-- Works on phones and desktops; progress autosaves
+- Five islands plus the castle, 18 hand-painted scenes, sailed between on a sea chart
+- Walk, Look, Hand, Talk and Item verbs; drop-down icon bar and verb cursors with a mouse, right-click to cycle
+- Talking portraits, an original chiptune theme for each island, an intro cinematic
+- 231 points, a logic-riddle cliff, a dozen-plus deaths with a "Try again" button, short and long endings
+- Works on phones and desktops; autosave plus three save slots
 
 Story, art and code are original. Not affiliated with Sierra or any King's Quest rights holder.

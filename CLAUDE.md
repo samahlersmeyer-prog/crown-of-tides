@@ -12,7 +12,8 @@ Original Sierra-style point-and-click adventure (inspired by King's Quest VI). P
 ## Layout
 - `js/game.js` — story, rooms, hotspots, puzzle logic (pure, runs in Node)
 - `js/art.js` — every scene, sprite and item icon, drawn on a 320×200 canvas
-- `js/engine.js` — render loop, walking, icon bar, dialogs, save/restore, sound
-- `test/walkthrough.test.js` — plays the full game to 100/100 and checks deaths, exits, walk boxes
+- `js/engine.js` — render loop, walking, icon bar, cursors, portraits, choices, sea chart, intro, save slots
+- `js/music.js` — chiptune sequencer, one original theme per island
+- `test/walkthrough.test.js` — plays both endings (long = 231/231) and checks deaths, exits, walk boxes
 
 Run tests: `node test/walkthrough.test.js`. Keep characters, story and art original — no Sierra assets or characters.

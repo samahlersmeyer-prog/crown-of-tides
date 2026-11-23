@@ -1,22 +1,27 @@
-// Crown of Tides — engine: rendering loop, walking, icon bar, dialogs, save/restore, sound.
+// Crown of Tides — engine: render loop, walking, icon bar, cursors, dialogs, map, save slots, sound.
 (function () {
   'use strict';
-  const G = window.Game, A = window.Art;
+  const G = window.Game, A = window.Art, M = window.Music;
   const $ = id => document.getElementById(id);
   const cv = $('screen'), cx = cv.getContext('2d');
   cx.imageSmoothingEnabled = false;
+  const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  document.body.classList.toggle('mouse', mouse);
 
   let s = G.newState();
   let verb = 'walk', item = null;
-  let walking = null;           // {tx, ty, then}
+  let walking = null;
   let frame = 0, dir = 1, frameT = 0;
   let queue = [], afterMsgs = null;
-  let snapshot = null;          // state before the last action, for "Try again"
-  let busy = true;              // title / dialogs block input
-  let soundOn = localStorage.getItem('cot_sound') !== 'off';
+  let snapshot = null;       // state before the last action, for "Try again"
+  let busy = true;
+  let scene = null;          // cinematic painter while the intro plays
   let fade = 0;
+  const pref = (k, d) => { const v = localStorage.getItem('cot_' + k); return v === null ? d : v === 'on'; };
+  let soundOn = pref('sound', true), fast = pref('fast', false);
+  M.setOn(pref('music', true));
 
-  // ---------- sound ----------
+  // ---------- sound effects ----------
   let ac = null;
   const tone = (notes, type = 'square', len = 0.12, vol = 0.05) => {
     if (!soundOn) return;
@@ -32,121 +37,192 @@
   const sfx = {
     score: () => tone([523, 659, 784, 1047], 'square', 0.08),
     die: () => tone([392, 330, 262, 196, 131], 'triangle', 0.22, 0.08),
-    win: () => tone([523, 523, 784, 659, 784, 1047, 1047], 'square', 0.16),
-    step: () => tone([880], 'sine', 0.05, 0.02)
+    win: () => tone([523, 523, 784, 659, 784, 1047, 1047], 'square', 0.16)
+  };
+
+  const themeFor = () => {
+    const r = s.room;
+    if (s.won) return 'title';
+    if (r === 'tower') return s.flags.beaten ? 'reef' : 'tower';
+    if (['tunnel', 'cellar', 'hall'].includes(r)) return 'castle';
+    return G.ROOMS[r].isle;
   };
 
   // ---------- status bar ----------
   const status = txt => { $('status-left').textContent = txt || G.ROOMS[s.room].name; };
   const updateScore = () => { $('score').textContent = `Score: ${s.score} of ${G.MAX_SCORE}`; };
 
-  // ---------- messages ----------
+  // ---------- messages with talker portraits ----------
+  const SPEAKER = { rowan: 'Rowan', bram: 'Old Bram', nell: 'Ferrywoman', oracle: 'The Oracle', pim: 'Pim', hester: 'Hester', fishmonger: 'Fishmonger', guard: 'Guard', granite: 'Granite', basalt: 'Basalt', nerissa: 'Queen Nerissa', elowen: 'Elowen', orla: 'Captain Orla', varrick: 'Varrick', king: 'King Aldous' };
   function showMsgs(lines, then) {
     if (!lines || !lines.length) { if (then) then(); return; }
     queue = lines.slice(); afterMsgs = then || null; nextMsg();
   }
   function nextMsg() {
     if (!queue.length) { $('msg').hidden = true; busy = false; const f = afterMsgs; afterMsgs = null; if (f) f(); return; }
-    busy = true; $('msg-text').textContent = queue.shift(); $('msg').hidden = false; $('msg').focus();
+    busy = true;
+    const line = queue.shift(), who = Array.isArray(line) ? line[0] : null, text = Array.isArray(line) ? line[1] : line;
+    const pc = $('portrait'), p = pc.getContext('2d');
+    p.clearRect(0, 0, 56, 56);
+    pc.hidden = !(who && A.portrait(p, who));
+    $('msg-who').textContent = who ? SPEAKER[who] || '' : '';
+    $('msg-who').hidden = !who;
+    $('msg-text').textContent = who ? `“${text}”` : text;
+    $('msg').hidden = false; $('msg').focus();
   }
   $('msg').addEventListener('click', nextMsg);
 
   // ---------- results ----------
   function apply(r, before) {
     if (r.die) { die(r.die); return; }
-    const done = () => {
-      if (s.score > before) sfx.score();
-      if (r.win) { setTimeout(win, 300); return; }
-      if (r.go) changeRoom(r.go);
-    };
     if (s.score > before) updateScore();
-    showMsgs(r.say, done);
+    showMsgs(r.say, () => {
+      if (s.score > before) sfx.score();
+      if (r.win) { setTimeout(() => win(r.win), 300); return; }
+      if (r.go) changeRoom(r.go);
+      if (r.choose) ask(r.choose);
+      if (r.map) openMap();
+    });
   }
 
   function changeRoom(go) {
     fade = 1;
+    const before = s.score;
     const lines = G.enter(s, go);
-    updateScore(); status(); renderItem();
+    if (s.score > before) sfx.score();
+    updateScore(); status(); renderItem(); M.start(themeFor());
     autosave();
     if (lines && lines.length) showMsgs(lines);
   }
 
+  // ---------- choices ----------
+  function ask(ch) {
+    $('choice-prompt').textContent = ch.prompt;
+    const box = $('choice-opts'); box.innerHTML = '';
+    ch.options.forEach(([id, text]) => {
+      const b = document.createElement('button'); b.textContent = text;
+      b.addEventListener('click', () => { closePanels(); snapshot = clone(s); const before = s.score; apply(G.choose(s, ch.id, id), before); });
+      box.append(b);
+    });
+    openPanel('choice');
+  }
+
+  // ---------- sea chart ----------
+  const mc = $('mapcv'), mx = mc.getContext('2d');
+  let mapOpen = false;
+  function openMap() {
+    if (!G.canSail(s)) { showMsgs(['You can only sail from your boat. Head back to it first.']); return; }
+    mapOpen = true; $('map-hint').textContent = 'Tap an island to set sail.'; openPanel('map');
+  }
+  const mapXY = e => { const b = mc.getBoundingClientRect(); return [(e.clientX - b.left) * 320 / b.width, (e.clientY - b.top) * 200 / b.height]; };
+  const mapHit = e => { const [x, y] = mapXY(e); return Object.keys(A.MAP_SPOTS).find(k => { const [ix, iy, r] = A.MAP_SPOTS[k]; return Math.hypot(x - ix, y - iy) < r; }); };
+  mc.addEventListener('click', e => { const k = mapHit(e); if (!k) return; mapOpen = false; closePanels(); const before = s.score; apply(G.travel(s, k), before); });
+  mc.addEventListener('pointermove', e => { const k = mapHit(e); mc.style.cursor = k ? 'pointer' : 'default'; $('map-hint').textContent = k ? 'Sail to ' + G.ISLES[k].name : 'Tap an island to set sail.'; });
+  $('map-close').addEventListener('click', () => { mapOpen = false; closePanels(); });
+
   // ---------- walking ----------
   const clampWalk = (x, y) => { const [x0, y0, x1, y1] = G.ROOMS[s.room].walk; return [Math.max(x0, Math.min(x1, x)), Math.max(y0, Math.min(y1, y))]; };
   function walkTo(x, y, then) { const [tx, ty] = clampWalk(x, y); walking = { tx, ty, then }; }
+  const scaleAt = y => { const sc = G.ROOMS[s.room].scale; if (!sc) return 1; const [y0, s0, y1, s1] = sc; return s0 + (s1 - s0) * Math.max(0, Math.min(1, (y - y0) / (y1 - y0))); };
 
   // ---------- input ----------
-  function toLogical(e) {
-    const b = cv.getBoundingClientRect();
-    return [(e.clientX - b.left) * 320 / b.width, (e.clientY - b.top) * 200 / b.height];
-  }
+  const toLogical = e => { const b = cv.getBoundingClientRect(); return [(e.clientX - b.left) * 320 / b.width, (e.clientY - b.top) * 200 / b.height]; };
+  const clone = o => JSON.parse(JSON.stringify(o));
   cv.addEventListener('pointermove', e => {
+    if (mouse && !scene) { const b = cv.getBoundingClientRect(); if (e.clientY - b.top < b.height * 0.1) showBar(); }
     if (busy) return;
     const [x, y] = toLogical(e), sp = G.hitSpot(s, x, y);
     status(sp ? sp.name : null);
-    cv.style.cursor = sp ? 'pointer' : 'crosshair';
   });
-  cv.addEventListener('pointerleave', () => status());
+  cv.addEventListener('pointerleave', () => { if (!busy) status(); });
+  // Right-click cycles verbs, like the old Sierra games.
+  cv.addEventListener('contextmenu', e => { e.preventDefault(); if (busy) return; const order = ['walk', 'look', 'hand', 'talk'].concat(item ? ['item'] : []); setVerb(order[(order.indexOf(verb) + 1) % order.length]); });
   cv.addEventListener('click', e => {
+    if (scene) { skipIntro(); return; }
     if (busy) return;
     const [x, y] = toLogical(e), sp = G.hitSpot(s, x, y);
     if (verb === 'item' && !item) { openInv(); return; }
     if (!sp) {
       if (verb === 'walk') walkTo(x, y);
-      else showMsgs([verb === 'look' ? describeRoom() : 'There\'s nothing there.']);
+      else showMsgs([verb === 'look' ? DESC[s.room] : 'There\'s nothing there.']);
       return;
     }
     status(sp.name);
-    const run = () => {
-      snapshot = JSON.parse(JSON.stringify(s));
-      const before = s.score;
-      const r = G.act(s, sp.id, verb, item);
-      apply(r, before);
-      if (verb === 'item' && !G.has(s, item)) { item = null; renderItem(); }
-    };
-    // Look from where you stand; everything else walks over first.
+    const run = () => { snapshot = clone(s); const before = s.score; apply(G.act(s, sp.id, verb, item), before); if (verb === 'item' && !G.has(s, item)) { item = null; renderItem(); } };
     if (verb === 'look') run();
     else if (sp.at) walkTo(sp.at[0], sp.at[1], run);
     else if (verb === 'walk') walkTo(x, y, run);
     else run();
   });
 
-  const describeRoom = () => ({
+  const DESC = {
     beach: 'A wide golden beach strewn with the remains of your ship. Cliffs rise to the west; a path leads east toward a village.',
     cliffs: 'Windy cliffs high above the sea. A strange doorway is carved into the rock face.',
     square: 'The village square of Saltmarrow, in the shadow of Tidewater Castle.',
     shop: 'A cluttered little curio shop that smells of salt and old rope.',
-    docks: 'Weathered docks. A ferry waits at the end of the pier.',
+    docks: 'Weathered docks. A ferry waits at the end of the pier, and a path runs south along the shore to the lighthouse.',
+    lighthouse: 'The lamp room at the top of the lighthouse, with windows on every side.',
     mistshore: 'A gloomy, misty shore. Something about this island makes the hair on your neck stand up.',
     oracle: 'A grotto lit by a glowing pool and a few guttering candles.',
+    clockharbor: 'The harbor town of the Clockmakers, all brass and gears.',
+    workshop: 'Pim\'s workshop: clocks on every wall, inventions on every surface.',
+    clocktower: 'The inside of the clock tower, a cathedral of gears.',
+    sentbase: 'The foot of a great spire of rock, guarded by two stone sentinels.',
+    aerie: 'The windswept summit of the Sentinel Isle, above the clouds.',
+    reef: 'A pink coral beach beside a turquoise lagoon.',
     tunnel: 'A cramped, damp smugglers\' tunnel. Mind your step.',
     cellar: 'The castle cellar, full of barrels and one snoring guard.',
-    hall: 'The Great Hall, dressed for a wedding nobody seems happy about.'
-  }[s.room]);
+    hall: 'The Great Hall, dressed for a wedding nobody seems happy about.',
+    tower: 'The top of the tallest tower.'
+  };
 
-  // ---------- icon bar ----------
+  // ---------- icon bar + cursors ----------
+  let barTimer = null;
+  function showBar() { if (!mouse) return; clearTimeout(barTimer); $('icons').classList.add('show'); }
+  function hideBar() { if (!mouse) return; clearTimeout(barTimer); barTimer = setTimeout(() => $('icons').classList.remove('show'), 350); }
+  $('icons').addEventListener('pointerenter', showBar);
+  $('icons').addEventListener('pointerleave', hideBar);
+
+  const cursorFor = {};
+  document.querySelectorAll('[data-verb] svg').forEach(svg => {
+    const inner = svg.innerHTML;
+    const art = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="#000" stroke-width="4">${inner}</g><g stroke="#f3d27a" stroke-width="1.8">${inner}</g></svg>`;
+    cursorFor[svg.parentElement.dataset.verb] = `url("data:image/svg+xml,${encodeURIComponent(art)}") 16 16, crosshair`;
+  });
+  function applyCursor() {
+    if (verb === 'item' && item) {
+      const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d');
+      x.imageSmoothingEnabled = false; x.drawImage($('item-icon'), 4, 4, 24, 24);
+      cv.style.cursor = `url(${c.toDataURL()}) 16 16, pointer`;
+    } else cv.style.cursor = cursorFor[verb] || 'crosshair';
+  }
+
   document.querySelectorAll('[data-verb]').forEach(b => b.addEventListener('click', () => {
     if (busy) return;
     const v = b.dataset.verb;
     if (v === 'item' && !item) { openInv(); return; }
-    setVerb(v);
+    setVerb(v); $('icons').classList.remove('show');
   }));
   function setVerb(v) {
     verb = v;
     document.querySelectorAll('[data-verb]').forEach(b => b.setAttribute('aria-pressed', b.dataset.verb === v));
+    applyCursor();
   }
   function renderItem() {
     const c = $('item-icon').getContext('2d'); c.clearRect(0, 0, 24, 24);
     if (item && G.has(s, item)) { A.items[item](c); $('btn-item').title = 'Use ' + G.ITEMS[item].name; }
     else { item = null; $('btn-item').title = 'Use an item'; if (verb === 'item') setVerb('walk'); }
+    applyCursor();
   }
-  $('btn-inv').addEventListener('click', () => { if (!busy) openInv(); });
-  $('btn-menu').addEventListener('click', () => { if (!busy) openPanel('menu'); });
+  $('btn-inv').addEventListener('click', () => { if (!busy) { $('icons').classList.remove('show'); openInv(); } });
+  $('btn-menu').addEventListener('click', () => { if (!busy) { $('icons').classList.remove('show'); openPanel('menu'); } });
 
   // ---------- inventory ----------
   let invSel = null;
   function openInv() {
-    const grid = $('inv-grid'); grid.innerHTML = ''; invSel = null; $('inv-desc').textContent = s.inv.length ? 'Tap an item to examine it.' : 'You aren\'t carrying anything yet.'; $('inv-use').hidden = true;
+    const grid = $('inv-grid'); grid.innerHTML = ''; invSel = null;
+    $('inv-desc').textContent = s.inv.length ? 'Tap an item to examine it.' : 'You aren\'t carrying anything yet.';
+    $('inv-use').hidden = true;
     s.inv.forEach(id => {
       const b = document.createElement('button'); b.className = 'inv-item'; b.setAttribute('aria-label', G.ITEMS[id].name);
       const c = document.createElement('canvas'); c.width = c.height = 24; A.items[id](c.getContext('2d'));
@@ -154,86 +230,153 @@
       b.append(c, l);
       b.addEventListener('click', () => {
         invSel = id; grid.querySelectorAll('.inv-item').forEach(x => x.classList.toggle('sel', x === b));
-        $('inv-desc').textContent = G.ITEMS[id].desc; $('inv-use').hidden = false; $('inv-use').textContent = 'Use ' + G.ITEMS[id].name;
+        $('inv-desc').textContent = G.ITEMS[id].desc; $('inv-use').hidden = false;
+        $('inv-use').textContent = id === 'compass' ? 'Unroll the chart' : 'Use ' + G.ITEMS[id].name;
       });
       grid.append(b);
     });
     openPanel('inv');
   }
-  $('inv-use').addEventListener('click', () => { item = invSel; renderItem(); setVerb('item'); closePanels(); });
-
-  // ---------- panels ----------
-  function openPanel(id) { busy = true; document.querySelectorAll('.panel').forEach(p => p.hidden = p.id !== id); $(id).querySelector('button').focus(); }
-  function closePanels() { document.querySelectorAll('.panel').forEach(p => p.hidden = true); busy = !$('msg').hidden; }
-  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closePanels));
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !document.querySelector('.panel:not([hidden])')?.matches('#title,#death,#end')) closePanels();
-    if ((e.key === 'Enter' || e.key === ' ') && !$('msg').hidden) { e.preventDefault(); nextMsg(); }
+  $('inv-use').addEventListener('click', () => {
+    if (invSel === 'compass') { closePanels(); openMap(); return; }
+    item = invSel; renderItem(); setVerb('item'); closePanels();
   });
 
-  // ---------- save / restore ----------
-  const autosave = () => { try { localStorage.setItem('cot_auto', JSON.stringify(s)); } catch (e) {} };
-  function load(key) {
-    try { const d = JSON.parse(localStorage.getItem(key)); if (d && G.ROOMS[d.room]) return d; } catch (e) {}
-    return null;
+  // ---------- panels ----------
+  function openPanel(id) { busy = true; document.querySelectorAll('.panel').forEach(p => p.hidden = p.id !== id); const f = $(id).querySelector('button:not([disabled])'); if (f) f.focus(); }
+  function closePanels() { document.querySelectorAll('.panel').forEach(p => p.hidden = true); busy = !$('msg').hidden; }
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => { mapOpen = false; closePanels(); }));
+  document.addEventListener('keydown', e => {
+    const open = document.querySelector('.panel:not([hidden])');
+    if (e.key === 'Escape' && open && !open.matches('#title,#death,#end,#choice')) { mapOpen = false; closePanels(); }
+    if ((e.key === 'Enter' || e.key === ' ') && !$('msg').hidden) { e.preventDefault(); nextMsg(); }
+    if (scene && e.key === 'Escape') skipIntro();
+  });
+
+  // ---------- save slots ----------
+  const SLOTS = 3;
+  const autosave = () => { try { localStorage.setItem('cot2_auto', JSON.stringify(s)); } catch (e) {} };
+  function load(key) { try { const d = JSON.parse(localStorage.getItem(key)); if (d && G.ROOMS[d.room]) return d; } catch (e) {} return null; }
+  function openSlots(mode) {
+    $('slots-title').textContent = mode === 'save' ? 'Save game' : 'Restore game';
+    const box = $('slot-list'); box.innerHTML = '';
+    const keys = (mode === 'restore' ? [['cot2_auto', 'Autosave']] : []).concat([1, 2, 3].slice(0, SLOTS).map(i => ['cot2_slot' + i, 'Slot ' + i]));
+    keys.forEach(([key, label]) => {
+      const d = load(key), b = document.createElement('button');
+      b.textContent = `${label}: ${d ? `${G.ROOMS[d.room].name}, ${d.score} points` : 'empty'}`;
+      b.disabled = mode === 'restore' && !d;
+      b.addEventListener('click', () => {
+        if (mode === 'save') { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} closePanels(); showMsgs(['Game saved to ' + label + '.']); }
+        else { startFrom(d); showMsgs(['Game restored.']); }
+      });
+      box.append(b);
+    });
+    openPanel('slots');
   }
-  function startFrom(state, intro) {
-    s = state; item = null; walking = null; setVerb('walk'); closePanels(); busy = false;
-    updateScore(); status(); renderItem(); fade = 1;
-    if (intro) showMsgs(G.enter(s, { to: s.room, x: s.x, y: s.y }) || []);
-  }
-  $('m-save').addEventListener('click', () => { try { localStorage.setItem('cot_save', JSON.stringify(s)); } catch (e) {} closePanels(); showMsgs(['Game saved.']); });
-  const restore = () => { const d = load('cot_save') || load('cot_auto'); if (d) { startFrom(d); showMsgs(['Game restored.']); } else showMsgs(['There\'s no saved game yet.']); };
-  $('m-restore').addEventListener('click', () => { closePanels(); restore(); });
-  $('m-restart').addEventListener('click', () => startFrom(G.newState(), true));
-  $('m-sound').addEventListener('click', () => { soundOn = !soundOn; localStorage.setItem('cot_sound', soundOn ? 'on' : 'off'); $('m-sound').textContent = 'Sound: ' + (soundOn ? 'On' : 'Off'); });
-  $('m-sound').textContent = 'Sound: ' + (soundOn ? 'On' : 'Off');
+  $('m-save').addEventListener('click', () => openSlots('save'));
+  $('m-restore').addEventListener('click', () => openSlots('restore'));
+  $('m-restart').addEventListener('click', () => newGame());
+  const toggleLabel = () => {
+    $('m-sound').textContent = 'Sound: ' + (soundOn ? 'On' : 'Off');
+    $('m-music').textContent = 'Music: ' + (M.on ? 'On' : 'Off');
+    $('m-speed').textContent = 'Speed: ' + (fast ? 'Fast' : 'Normal');
+  };
+  $('m-sound').addEventListener('click', () => { soundOn = !soundOn; localStorage.setItem('cot_sound', soundOn ? 'on' : 'off'); toggleLabel(); });
+  $('m-music').addEventListener('click', () => { M.setOn(!M.on); localStorage.setItem('cot_music', M.on ? 'on' : 'off'); if (M.on) M.start(themeFor()); toggleLabel(); });
+  $('m-speed').addEventListener('click', () => { fast = !fast; localStorage.setItem('cot_fast', fast ? 'on' : 'off'); toggleLabel(); });
+  toggleLabel();
   $('m-about').addEventListener('click', () => openPanel('about'));
 
-  // ---------- title / death / end ----------
-  $('t-new').addEventListener('click', () => startFrom(G.newState(), true));
-  $('t-continue').addEventListener('click', () => { const d = load('cot_auto'); if (d) startFrom(d); });
-  $('t-continue').hidden = !load('cot_auto');
+  function startFrom(state) {
+    s = state; item = null; walking = null; scene = null; mapOpen = false; setVerb('walk'); closePanels(); busy = false;
+    updateScore(); status(); renderItem(); fade = 1; M.start(themeFor());
+  }
+  function newGame() { startFrom(G.newState()); showMsgs(G.enter(s, { to: 'beach', x: 160, y: 172 }) || []); }
 
+  // ---------- intro cinematic ----------
+  const INTRO = [
+    ['mirror', [
+      'In the kingdom of Thornmere, a travelling seer showed Prince Rowan a magic mirror.',
+      'In its glass he saw a princess with copper hair and sea-green eyes: Elowen of the Tidewater Isles, a month\'s sail to the south.',
+      'The seer swore the vision was a cry for help. Rowan set sail the very next morning.'
+    ]],
+    ['storm', [
+      'Thirty days out, a storm rose from a clear sky, black and wrong, as if someone had summoned it.',
+      'Off the Tidewater Isles, the lighthouse that should have warned them stood dark.'
+    ]]
+  ];
+  function playIntro() {
+    let i = 0;
+    closePanels(); M.start('mists');
+    status('Crown of Tides');
+    const next = () => {
+      if (!scene) return;
+      if (i >= INTRO.length) { scene = null; newGame(); return; }
+      const [name, lines] = INTRO[i++]; scene = A.cine[name]; fade = 1;
+      showMsgs(lines, next);
+    };
+    scene = true; next();
+  }
+  function skipIntro() { queue = []; afterMsgs = null; $('msg').hidden = true; scene = null; newGame(); }
+  $('intro-skip').addEventListener('click', e => { e.stopPropagation(); if (scene) skipIntro(); });
+  $('t-new').addEventListener('click', playIntro);
+  $('t-continue').addEventListener('click', () => { const d = load('cot2_auto'); if (d) startFrom(d); });
+  $('t-continue').hidden = !load('cot2_auto');
+
+  // ---------- death / endings ----------
   function die(text) {
     sfx.die(); walking = null;
     $('death-text').textContent = text;
     openPanel('death');
   }
   $('d-retry').addEventListener('click', () => { if (snapshot) startFrom(snapshot); });
-  $('d-restore').addEventListener('click', () => { closePanels(); restore(); });
-  $('d-restart').addEventListener('click', () => startFrom(G.newState(), true));
+  $('d-restore').addEventListener('click', () => openSlots('restore'));
+  $('d-restart').addEventListener('click', newGame);
 
-  function win() {
-    sfx.win(); localStorage.removeItem('cot_auto');
+  const ENDINGS = {
+    long: ['Happily Ever After', 'King Aldous gives his blessing before the cake is even cut. The lighthouse burns every night, the clocks keep perfect time, and a small, cross crab lives out his days in the castle moat.\n\nRowan and Elowen sail for Thornmere in the spring, with a golden roc flying escort.'],
+    short: ['The End?', 'Varrick is gone and Elowen is free. But the old king sleeps on in his tower, and the wedding waits for a father who cannot give his blessing.\n\nSomewhere, perhaps, a golden feather could have woken him.']
+  };
+  function win(kind) {
+    sfx.win(); M.start('title'); localStorage.removeItem('cot2_auto');
+    $('end-title').textContent = ENDINGS[kind][0];
+    $('end-text').textContent = ENDINGS[kind][1];
     $('end-score').textContent = `Final score: ${s.score} of ${G.MAX_SCORE}`;
     openPanel('end');
   }
-  $('e-again').addEventListener('click', () => startFrom(G.newState(), true));
+  $('e-again').addEventListener('click', newGame);
 
   // ---------- render loop ----------
   let last = performance.now();
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const t = now / 1000;
-    if (walking) {
-      const dx = walking.tx - s.x, dy = walking.ty - s.y, d = Math.hypot(dx, dy), sp = 70 * dt;
-      if (Math.abs(dx) > 0.5) dir = dx > 0 ? 1 : -1;
-      if (d <= sp) { s.x = walking.tx; s.y = walking.ty; const f = walking.then; walking = null; frame = 0; if (f) f(); }
-      else { s.x += dx / d * sp; s.y += dy / d * sp; frameT += dt; if (frameT > 0.14) { frameT = 0; frame++; } }
+    document.body.classList.toggle('cine', !!scene);
+    if (typeof scene === 'function') scene(cx, s, t);
+    else {
+      if (walking) {
+        const dx = walking.tx - s.x, dy = walking.ty - s.y, d = Math.hypot(dx, dy);
+        const sp = (fast ? 120 : 70) * dt * scaleAt(s.y);
+        if (Math.abs(dx) > 0.5) dir = dx > 0 ? 1 : -1;
+        if (d <= sp) { s.x = walking.tx; s.y = walking.ty; const f = walking.then; walking = null; frame = 0; if (f) f(); }
+        else { s.x += dx / d * sp; s.y += dy / d * sp; frameT += dt; if (frameT > 0.14) { frameT = 0; frame++; } }
+      }
+      const room = A.rooms[s.room];
+      cx.clearRect(0, 0, 320, 200);
+      room.bg(cx, s, t);
+      const sc = scaleAt(s.y);
+      const actors = (room.actors ? room.actors(s, t) : []).concat([{ y: s.y, d: c => A.player(c, s.x, s.y, frame, dir, sc) }]);
+      actors.sort((a, b) => a.y - b.y).forEach(a => a.d(cx));
+      if (room.post) room.post(cx, s, t);
     }
-    const room = A.rooms[s.room];
-    cx.clearRect(0, 0, 320, 200);
-    room.bg(cx, s, t);
-    const actors = (room.actors ? room.actors(s, t) : []).concat([{ y: s.y, d: c => A.player(c, s.x, s.y, frame, dir) }]);
-    actors.sort((a, b) => a.y - b.y).forEach(a => a.d(cx));
-    if (room.post) room.post(cx, s, t);
+    if (mapOpen) A.chart(mx, s, t, G.ROOMS[s.room].isle);
     if (fade > 0) { cx.fillStyle = `rgba(0,0,0,${fade})`; cx.fillRect(0, 0, 320, 200); fade = Math.max(0, fade - dt * 3); }
     requestAnimationFrame(loop);
   }
 
-  // Title screen paints the beach behind it.
   s.room = 'beach'; updateScore(); status('Crown of Tides'); setVerb('walk');
+  // Browsers only allow audio after a tap, so the title theme starts on the first one.
+  document.addEventListener('pointerdown', () => { if (!s.flags.seen_beach && !scene) M.start('title'); }, { once: true });
   openPanel('title');
   requestAnimationFrame(loop);
 })();

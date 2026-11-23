@@ -411,7 +411,10 @@
       const actors = (room.actors ? room.actors(s, t) : []).concat([{ y: s.y, d: c => A.player(c, s.x, s.y, frame, dir, sc) }]);
       actors.sort((a, b) => a.y - b.y).forEach(a => a.d(cx));
       if (room.post) room.post(cx, s, t);
+      if (!G.ROOMS[s.room].outdoors && s.room !== 'tunnel') A.vignette(cx);
     }
+    // VGA finish: grain + this scene's own 256-colour palette with ordered dither.
+    const f = s.flags; window.VGA.finish(cx, (typeof scene === 'function' ? 'cine' + INTRO.findIndex(x => A.cine[x[0]] === scene) : s.room) + (f.lit ? 'L' : '') + (f.beaten ? 'B' : '') + (s.won ? 'W' : '') + (f.clock ? 'C' : '') + (f.summoned ? 'S' : ''));
     if (mapOpen) A.chart(mx, s, t, G.ROOMS[s.room].isle);
     if (fade > 0) { cx.fillStyle = `rgba(0,0,0,${fade})`; cx.fillRect(0, 0, 320, 200); fade = Math.max(0, fade - dt * 3); }
     requestAnimationFrame(loop);

@@ -22,4 +22,6 @@ Original Sierra-style point-and-click adventure (inspired by King's Quest VI). P
 - `js/board.js` + `tools/scoreboard.gs` — family scoreboard (Apps Script web app)
 - `test/stuck.test.js` — random play, then proves the game can still be won (no dead ends)
 
+Deploys: bump the `?v=` on every script and stylesheet tag in `index.html`, or returning players mix new HTML with cached old code.
+
 Run tests: `node test/walkthrough.test.js && node test/stuck.test.js`. Keep characters, story and art original — no Sierra assets or characters.
